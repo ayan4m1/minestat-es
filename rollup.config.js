@@ -1,7 +1,6 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
 import autoExternal from 'rollup-plugin-auto-external';
-import babel from '@rollup/plugin-babel';
 
 export default {
   input: './src/index.js',
@@ -14,9 +13,6 @@ export default {
       builtins: true
     }),
     nodeResolve(),
-    babel({
-      babelHelpers: 'runtime'
-    }),
     terser()
   ]
 };
