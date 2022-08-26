@@ -41,17 +41,16 @@ A utility method for performing SRV DNS lookups is provided. `resolveSrvRecord(h
 ## usage
 
 ```js
-import { fetchServerInfo } from 'minestat-es';
+import { fetchServerInfo, resolveSrvRecord } from 'minestat-es';
 
-const execute = async () => {
-  const { online, players } = await fetchServerInfo('1.2.3.4', 25565);
+(async () => {
+  const { name, port } = await resolveSrvRecord('some.minecraft.host');
+  const { online, players } = await fetchServerInfo(name, port);
 
   console.log(`Server is ${online ? 'Online' : 'Offline'}`);
 
   if (online) {
     console.log(`There are ${players} player(s) online.`);
   }
-};
-
-execute();
+})();
 ```
