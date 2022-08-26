@@ -21,11 +21,13 @@ export const fetchServerInfo = (address, port, timeout = 5000) =>
         client.write(queryBytes);
       });
 
-      client.setTimeout(timeout);
-      client.on('error', reject);
-      client.on('timeout', () => {
+      client.setTimeout(timeout, () => {
         client.end();
         resolveOffline();
+      });
+      client.on('error', (error) => {
+        client.end();
+        reject(error);
       });
       client.on('data', (raw) => {
         client.end();
