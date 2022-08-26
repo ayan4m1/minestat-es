@@ -14,7 +14,7 @@
 
 ## api
 
-One function is provided, `fetchServerInfo(address, port, timeout)`. It returns a promise which will resolve with an object containing the following properties:
+To query a Minecraft server, use `fetchServerInfo(address, port, timeout)`. It returns a promise which will resolve with an object containing the following properties:
 
 | Key    | Type      | Description                         |
 | ------ | --------- | ----------------------------------- |
@@ -28,6 +28,15 @@ If the server is online, the object will also contain the following properties:
 | motd       | `string` | The server's Message of the Day                   |
 | players    | `number` | The number of players on the server               |
 | maxPlayers | `number` | The maximum number of players the server supports |
+
+The promise will reject if any error is encountered.
+
+A utility method for performing SRV DNS lookups is provided. `resolveSrvRecord(hostname)` returns a promise which will resolve with an object containing the following properties:
+
+| Key  | Type     | Description          |
+| ---- | -------- | -------------------- |
+| name | `string` | The server's address |
+| port | `number` | The server's port    |
 
 ## usage
 

@@ -1,9 +1,17 @@
 import { connect } from 'net';
+import { promises as dns } from 'dns';
 
 const queryBytes = Buffer.from([0xfe, 0x01]);
 
 // eslint-disable-next-line no-control-regex
 const stripString = (str) => str.replace(/\u0000/g, '');
+
+export const resolveSrvRecord = async (hostname) => {
+  const records = await dns.resolveSrv(hostname);
+  const record = records[Math.floor(Math.random() * records.length)];
+
+  return record;
+};
 
 export const fetchServerInfo = (address, port, timeout = 5000) =>
   new Promise((resolve, reject) => {
