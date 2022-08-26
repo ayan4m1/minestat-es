@@ -1,5 +1,7 @@
 import { connect } from 'net';
 
+const queryBytes = Buffer.from([0xfe, 0x01]);
+
 // eslint-disable-next-line no-control-regex
 const stripString = (str) => str.replace(/\u0000/g, '');
 
@@ -8,7 +10,7 @@ export const fetchServerInfo = (address, port, timeout = 5000) =>
     try {
       const resolveOffline = () => resolve({ offline: false });
       const client = connect(port, address, () => {
-        client.write(Buffer.from([0xfe, 0x01]));
+        client.write(queryBytes);
       });
 
       client.setTimeout(timeout);
