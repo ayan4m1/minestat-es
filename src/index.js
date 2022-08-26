@@ -25,10 +25,19 @@ export const fetchServerInfo = (address, port, timeout = 5000) =>
         }
 
         const info = raw.toString().split('\x00\x00\x00');
+
+        if (info.length < 6) {
+          return reject(new Error('Got invalid reply from Minecraft server!'));
+        }
+
         const version = stripString(info[2]);
         const motd = stripString(info[3]);
         const players = parseInt(stripString(info[4]), 10);
         const maxPlayers = parseInt(stripString(info[5]), 10);
+
+        if (isNaN(players) || isNaN(maxPlayers)) {
+          return reject(new Error('Failed to parse player count numbers!'));
+        }
 
         resolve({
           online: true,
