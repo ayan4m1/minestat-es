@@ -4,9 +4,10 @@
 
 ## features
 
-- Less than one kilobyte of code
+- Written in TypeScript
+- Less than 5kB of code
 - No runtime dependencies
-- ESM support
+- Supports ESM and CommonJS
 
 ## requirements
 

@@ -1,22 +1,41 @@
 import { connect } from 'net';
-import { promises as dns } from 'dns';
+import { promises as dns, SrvRecord } from 'dns';
 
 const queryBytes = Buffer.from([0xfe, 0x01]);
 
-// eslint-disable-next-line no-control-regex
-const stripString = (str) => str.replace(/\u0000/g, '');
+function stripString(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\u0000/g, '');
+}
 
-export const resolveSrvRecord = async (hostname) => {
+export interface ServerInfo {
+  online: boolean;
+  version?: string;
+  motd?: string;
+  players?: number;
+  maxPlayers?: number;
+}
+
+export async function resolveSrvRecord(hostname: string): Promise<SrvRecord> {
   const records = await dns.resolveSrv(hostname);
+
+  if (!records.length) {
+    return null;
+  }
+
   const record = records[Math.floor(Math.random() * records.length)];
 
   return record;
-};
+}
 
-export const fetchServerInfo = (address, port, timeout = 5000) =>
-  new Promise((resolve, reject) => {
+export async function fetchServerInfo(
+  address: string,
+  port: number,
+  timeout = 5000
+): Promise<ServerInfo> {
+  return new Promise((resolve, reject) => {
     try {
-      const resolveOffline = () => resolve({ offline: false });
+      const resolveOffline = () => resolve({ online: false });
       const client = connect(port, address, () => {
         client.write(queryBytes);
       });
@@ -32,7 +51,7 @@ export const fetchServerInfo = (address, port, timeout = 5000) =>
       client.on('data', (raw) => {
         client.end();
 
-        if (raw === null || raw === '') {
+        if (raw === null || raw.length === 0) {
           return resolveOffline();
         }
 
@@ -63,3 +82,4 @@ export const fetchServerInfo = (address, port, timeout = 5000) =>
       reject(error);
     }
   });
+}
