@@ -18,7 +18,7 @@
     "build": "rollup -c",
     "develop": "rollup -c -w",
     "lint": "eslint ./src --ext .ts",
-    "version": "auto-changelog -p && git add CHANGELOG.md"
+    "version": "auto-changelog -p -l 10 && git add CHANGELOG.md"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.5.0",
