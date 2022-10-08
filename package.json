@@ -17,12 +17,14 @@
   "scripts": {
     "build": "rollup -c",
     "develop": "rollup -c -w",
-    "lint": "eslint ./src --ext .ts"
+    "lint": "eslint ./src --ext .ts",
+    "version": "auto-changelog -p && git add CHANGELOG.md"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^8.5.0",
     "@typescript-eslint/eslint-plugin": "^5.39.0",
     "@typescript-eslint/parser": "^5.39.0",
+    "auto-changelog": "^2.4.0",
     "eslint": "^7.28.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
