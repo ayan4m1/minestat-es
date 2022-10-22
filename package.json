@@ -19,6 +19,7 @@
     "lib/"
   ],
   "scripts": {
+    "prepack": "rollup -c",
     "build": "rollup -c",
     "develop": "rollup -c -w",
     "lint": "eslint ./src --ext .ts",
