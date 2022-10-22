@@ -5,6 +5,10 @@
   "description": "Promise-based Minecraft server status",
   "author": "ayan4m1 <andrew@bulletlogic.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ayan4m1/minestat-es"
+  },
   "main": "lib/index.cjs",
   "module": "lib/index.js",
   "types": "lib/index.d.ts",
