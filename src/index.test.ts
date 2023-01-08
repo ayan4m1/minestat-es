@@ -25,7 +25,6 @@ describe('minestat-es', () => {
   });
 
   describe('fetchServerInfo', () => {
-    // const MockSocket = Socket as jest.MockedClass<typeof Socket>;
     const connectMock = connect as jest.MockedFunction<typeof connect>;
     const offlineResult: ServerInfo = { online: false };
 
