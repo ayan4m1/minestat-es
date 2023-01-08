@@ -8,6 +8,7 @@
 - Less than 5kB of code
 - No runtime dependencies
 - Supports ESM and CommonJS
+- Unit tests
 
 ## requirements
 
