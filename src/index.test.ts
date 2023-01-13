@@ -21,13 +21,51 @@ describe('minestat-es', () => {
   const port = 25565;
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('fetchServerInfo', () => {
-    const connectMock = connect as jest.MockedFunction<typeof connect>;
+    type ConnectMock = (
+      port: number,
+      hostname: string,
+      fn?: () => void
+    ) => Socket;
+    const connectMock = connect as unknown as jest.MockedFunction<ConnectMock>;
     const offlineResult: ServerInfo = { online: false };
 
+    test('writes two bytes when connected', (done) => {
+      const socket = new Socket();
+
+      socket.on = jest.fn();
+      socket.end = jest.fn();
+      socket.setTimeout = jest.fn();
+      socket.write = jest.fn();
+
+      connectMock.mockImplementation(
+        (mockPort: number, mockHost: string, mockFn?: () => void): Socket => {
+          expect(mockPort).toBe(port);
+          expect(mockHost).toBe(hostname);
+          expect(mockFn).toBeInstanceOf(Function);
+
+          setTimeout(() => {
+            expect(socket.write).not.toHaveBeenCalled();
+
+            mockFn();
+
+            expect(socket.write).toHaveBeenCalledWith(
+              Buffer.from([0xfe, 0x01])
+            );
+
+            done();
+          }, 10);
+
+          return socket;
+        }
+      );
+
+      expect.assertions(5);
+      fetchServerInfo(hostname, port);
+    });
     test('unhandled error', async () => {
       expect.assertions(1);
       try {
