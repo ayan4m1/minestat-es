@@ -1,6 +1,7 @@
 # minestat-es
 
-![Package Version](https://badge.fury.io/js/minestat-es.svg)
+[![Package Version](https://badge.fury.io/js/minestat-es.svg)](https://www.npmjs.com/package/minestat-es)
+[![Code Coverage](https://codecov.io/gh/ayan4m1/minestat-es/branch/main/graph/badge.svg?token=UKTTU7XNAM)](https://codecov.io/gh/ayan4m1/minestat-es)
 
 ## features
 
