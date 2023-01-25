@@ -24,7 +24,7 @@
     "develop": "rollup -c -w",
     "lint": "eslint ./src --ext .ts",
     "test": "jest",
-    "version": "auto-changelog -p -l 10 && git add CHANGELOG.md"
+    "version": "auto-changelog -p -b 10 -l 10 && git add CHANGELOG.md"
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.0",
