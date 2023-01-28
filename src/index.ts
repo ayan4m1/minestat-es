@@ -4,7 +4,6 @@ import { promises as dns, SrvRecord } from 'dns';
 const queryBytes = Buffer.from([0xfe, 0x01]);
 
 function stripString(str: string): string {
-  // eslint-disable-next-line no-control-regex
   return str.replace(/\u0000/g, '');
 }
 
