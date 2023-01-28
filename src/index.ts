@@ -53,7 +53,7 @@ export async function resolveSrvRecord(hostname: string): Promise<SrvRecord> {
  * @param timeout Connection timeout in milliseconds.
  * @returns Server information.
  */
-export async function fetchServerInfo(
+export function fetchServerInfo(
   address: string,
   port: number,
   timeout = 5000
