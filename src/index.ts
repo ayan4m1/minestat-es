@@ -1,12 +1,24 @@
 import { connect } from 'net';
 import { promises as dns, SrvRecord } from 'dns';
 
+/**
+ * These two bytes will cause the server to send a reply.
+ */
 const queryBytes = Buffer.from([0xfe, 0x01]);
 
+/**
+ * Remove empty Unicode characters from a string.
+ *
+ * @param str Input string.
+ * @returns String with Unicode characters removed.
+ */
 function stripString(str: string): string {
   return str.replace(/\u0000/g, '');
 }
 
+/**
+ * Contains an `online` boolean plus the server reply data.
+ */
 export interface ServerInfo {
   online: boolean;
   version?: string;
@@ -15,6 +27,12 @@ export interface ServerInfo {
   maxPlayers?: number;
 }
 
+/**
+ * Use DNS to resolve an SRV record for a given hostname.
+ *
+ * @param hostname An FQDN which has one or more SRV records in DNS.
+ * @returns {Promise<SrvRecord>} A record if one was found, null otherwise.
+ */
 export async function resolveSrvRecord(hostname: string): Promise<SrvRecord> {
   const records = await dns.resolveSrv(hostname);
 
@@ -27,6 +45,14 @@ export async function resolveSrvRecord(hostname: string): Promise<SrvRecord> {
   return record;
 }
 
+/**
+ * Open a TCP socket to query Minecraft server status.
+ *
+ * @param address An FQDN or IP address.
+ * @param port A TCP port number.
+ * @param timeout Connection timeout in milliseconds.
+ * @returns Server information.
+ */
 export async function fetchServerInfo(
   address: string,
   port: number,
