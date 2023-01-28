@@ -19,9 +19,9 @@
     "lib/"
   ],
   "scripts": {
-    "prepack": "rollup -c",
-    "build": "rollup -c",
-    "develop": "rollup -c -w",
+    "prepack": "rollup -c --configPlugin typescript",
+    "build": "rollup -c --configPlugin typescript",
+    "develop": "rollup -c -w --configPlugin typescript",
     "lint": "eslint ./src --ext .ts",
     "test": "jest",
     "version": "auto-changelog -p -b 10 -l 10 && git add CHANGELOG.md"
@@ -43,6 +43,7 @@
     "prettier": "^2.8.3",
     "rollup": "^3.10.1",
     "rollup-plugin-auto-external": "^2.0.0",
-    "ts-jest": "^29.0.5"
+    "ts-jest": "^29.0.5",
+    "typescript": "^4.9.4"
   }
 }
