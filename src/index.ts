@@ -54,6 +54,7 @@ export async function fetchServerInfo(
   let address: string = null,
     port: number = null;
 
+  // obtain address/port from DNS if required
   if ('hostname' in options) {
     const hostOptions = options as HostnameArgs;
     const records = await dns.resolveSrv(hostOptions.hostname);
@@ -75,11 +76,14 @@ export async function fetchServerInfo(
     port = addrOptions.port;
   }
 
+  // fill in default timeout of 5 seconds
   if (!options.timeout) {
     options.timeout = 5000;
   }
 
+  // perform socket connect/write/read/end
   return new Promise((resolve, reject) => {
+    // guard against any exceptions that might occur
     try {
       const resolveOffline = () => resolve({ online: false });
       const client = connect(port, address, () => {
@@ -97,25 +101,30 @@ export async function fetchServerInfo(
       client.on('data', (raw) => {
         client.end();
 
+        // empty response can indicate a server that is still starting up
         if (raw === null || raw.length === 0) {
           return resolveOffline();
         }
 
         const info = raw.toString().split('\x00\x00\x00');
 
+        // ensure required data is available
         if (info.length < 6) {
           return reject(new Error('Got invalid reply from Minecraft server!'));
         }
 
+        // attempt to parse data from server
         const version = stripString(info[2]);
         const motd = stripString(info[3]);
         const players = parseInt(stripString(info[4]), 10);
         const maxPlayers = parseInt(stripString(info[5]), 10);
 
+        // validate player count parsing
         if (isNaN(players) || isNaN(maxPlayers)) {
           return reject(new Error('Failed to parse player count numbers!'));
         }
 
+        // return server info
         resolve({
           online: true,
           version,
