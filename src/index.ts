@@ -1,5 +1,5 @@
 import { connect } from 'net';
-import { promises as dns, SrvRecord } from 'dns';
+import { promises as dns } from 'dns';
 
 /**
  * These two bytes will cause the server to send a reply.
@@ -27,22 +27,17 @@ export interface ServerInfo {
   maxPlayers?: number;
 }
 
-/**
- * Use DNS to resolve an SRV record for a given hostname.
- *
- * @param hostname An FQDN which has one or more SRV records in DNS.
- * @returns {Promise<SrvRecord>} A record if one was found, null otherwise.
- */
-export async function resolveSrvRecord(hostname: string): Promise<SrvRecord> {
-  const records = await dns.resolveSrv(hostname);
+export interface CommonArgs {
+  timeout?: number;
+}
 
-  if (!records.length) {
-    return null;
-  }
+export interface HostnameArgs extends CommonArgs {
+  hostname: string;
+}
 
-  const record = records[Math.floor(Math.random() * records.length)];
-
-  return record;
+export interface AddressArgs extends CommonArgs {
+  address: string;
+  port: number;
 }
 
 /**
@@ -53,11 +48,37 @@ export async function resolveSrvRecord(hostname: string): Promise<SrvRecord> {
  * @param timeout Connection timeout in milliseconds.
  * @returns Server information.
  */
-export function fetchServerInfo(
-  address: string,
-  port: number,
-  timeout = 5000
+export async function fetchServerInfo(
+  options: HostnameArgs | AddressArgs
 ): Promise<ServerInfo> {
+  let address: string = null,
+    port: number = null;
+
+  if ('hostname' in options) {
+    const hostOptions = options as HostnameArgs;
+    const records = await dns.resolveSrv(hostOptions.hostname);
+
+    if (!records.length) {
+      throw new Error(
+        `No DNS records found for hostname ${hostOptions.hostname}`
+      );
+    }
+
+    const record = records[Math.floor(Math.random() * records.length)];
+
+    address = record.name;
+    port = record.port;
+  } else {
+    const addrOptions = options as AddressArgs;
+
+    address = addrOptions.address;
+    port = addrOptions.port;
+  }
+
+  if (!options.timeout) {
+    options.timeout = 5000;
+  }
+
   return new Promise((resolve, reject) => {
     try {
       const resolveOffline = () => resolve({ online: false });
@@ -65,7 +86,7 @@ export function fetchServerInfo(
         client.write(queryBytes);
       });
 
-      client.setTimeout(timeout, () => {
+      client.setTimeout(options.timeout, () => {
         client.end();
         resolveOffline();
       });
