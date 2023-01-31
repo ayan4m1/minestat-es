@@ -9,15 +9,38 @@
 - Less than 5kB of code
 - No runtime dependencies
 - Supports ESM and CommonJS
-- Unit tests
+- Comprehensive unit tests
 
 ## requirements
 
 - Node 16+
 
-## api
+## usage
 
-To query a Minecraft server, use `fetchServerInfo(address, port, timeout)`. It returns a promise which will resolve with an object containing the following properties:
+### by address/port
+
+To query a Minecraft server using an IP/hostname and a port, use:
+
+```ts
+fetchServerInfo({
+  address: '1.2.3.4',
+  port: 25565,
+  timeout: 1000
+});
+```
+
+### by hostname
+
+To perform an SRV record lookup and query a Minecraft server using only a hostname, use:
+
+```ts
+fetchServerInfo({
+  hostname: 'example.com',
+  timeout: 1000
+});
+```
+
+Regardless of which way it was invoked, `fetchServerInfo` returns a promise which will resolve with an object containing the following properties:
 
 | Key    | Type      | Description                         |
 | ------ | --------- | ----------------------------------- |
@@ -32,28 +55,37 @@ If the server is online, the object will also contain the following properties:
 | players    | `number` | The number of players on the server               |
 | maxPlayers | `number` | The maximum number of players the server supports |
 
-The promise will reject if any error is encountered.
+`fetchServerInfo` rejects if an error occurs during SRV record resolution, socket operations, or parsing/validating the server response.
 
-A utility method for performing SRV DNS lookups is provided. `resolveSrvRecord(hostname)` returns a promise which will resolve with an object containing the following properties:
+## example
 
-| Key  | Type     | Description          |
-| ---- | -------- | -------------------- |
-| name | `string` | The server's address |
-| port | `number` | The server's port    |
-
-## usage
-
-```js
-import { fetchServerInfo, resolveSrvRecord } from 'minestat-es';
+```ts
+import { fetchServerInfo } from 'minestat-es';
 
 (async () => {
-  const { name, port } = await resolveSrvRecord('some.minecraft.host');
-  const { online, players } = await fetchServerInfo(name, port);
+  try {
+    // query by hostname (SRV lookup)
+    const { online, players } = await fetchServerInfo({
+      hostname: 'mc.example.com'
+    });
 
-  console.log(`Server is ${online ? 'Online' : 'Offline'}`);
+    // OR
 
-  if (online) {
-    console.log(`There are ${players} player(s) online.`);
+    // query by address/port
+    const { online, players } = await fetchServerInfo({
+      address: 'example.com', // could also be an IP address
+      port: 25565
+    });
+
+    // interpret the results
+    console.log(`Server is ${online ? 'Online' : 'Offline'}`);
+    if (online) {
+      console.log(`There are ${players} player(s) online.`);
+    }
+  } catch (error) {
+    // either the SRV record failed to resolve, the socket failed,
+    // or the response from the server was invalid
+    console.error(error);
   }
 })();
 ```
