@@ -46,6 +46,12 @@ Regardless of which way it was invoked, `fetchServerInfo` returns a promise whic
 | ------ | --------- | ----------------------------------- |
 | online | `boolean` | Whether the server is online or not |
 
+If the server is offline, the object will also contain the properties:
+
+| Key   | Type    | Description                     |
+| ----- | ------- | ------------------------------- |
+| error | `Error` | A socket error, if one occurred |
+
 If the server is online, the object will also contain the following properties:
 
 | Key        | Type     | Description                                       |
@@ -65,14 +71,14 @@ import { fetchServerInfo } from 'minestat-es';
 (async () => {
   try {
     // query by hostname (SRV lookup)
-    const { online, players } = await fetchServerInfo({
+    const { online, error, players } = await fetchServerInfo({
       hostname: 'mc.example.com'
     });
 
     // OR
 
     // query by address/port
-    const { online, players } = await fetchServerInfo({
+    const { online, error, players } = await fetchServerInfo({
       address: 'example.com', // could also be an IP address
       port: 25565
     });
@@ -81,10 +87,13 @@ import { fetchServerInfo } from 'minestat-es';
     console.log(`Server is ${online ? 'Online' : 'Offline'}`);
     if (online) {
       console.log(`There are ${players} player(s) online.`);
+    } else if (error) {
+      // either the SRV record failed to resolve, a socket error occurred,
+      // or the response from the server was invalid
+      console.error(error);
     }
   } catch (error) {
-    // either the SRV record failed to resolve, the socket failed,
-    // or the response from the server was invalid
+    // an unexpected error occurred
     console.error(error);
   }
 })();
