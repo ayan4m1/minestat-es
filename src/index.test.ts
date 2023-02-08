@@ -3,6 +3,7 @@ import { connect, Socket } from 'net';
 
 import { fetchServerInfo, ServerInfo } from './index';
 
+// Mock the node modules we depend on
 jest.mock('net', () => ({
   ...jest.requireActual('net'),
   connect: jest.fn(),
@@ -16,25 +17,56 @@ jest.mock('dns', () => ({
   }
 }));
 
-describe('minestat-es', () => {
-  const hostname = 'example.com';
-  const address = '1.2.3.4';
-  const port = 25565;
+/**
+ * Represents a function which takes a port, hostname, and callback
+ * and returns a Socket.
+ */
+type ConnectMock = (
+  port: number,
+  hostname: string,
+  fn?: CallableFunction
+) => Socket;
 
+/**
+ * Creates a mocked Socket using the supplied method implementations.
+ *
+ * @param on Handler for .on()
+ * @param end Handler for .end()
+ * @param setTimeout Handler for .setTimeout()
+ * @param write Handler for .write()
+ * @returns A mock Socket instance
+ */
+const createMockSocket = (
+  on: jest.Mock = jest.fn(),
+  end: jest.Mock = jest.fn(),
+  setTimeout: jest.Mock = jest.fn(),
+  write: jest.Mock = jest.fn()
+): Socket => {
+  const result = new Socket();
+
+  result.on = on;
+  result.end = end;
+  result.setTimeout = setTimeout;
+  result.write = write;
+
+  return result;
+};
+
+// Create mock functions for the node modules we depend on
+const connectMock = connect as unknown as jest.MockedFunction<ConnectMock>;
+const resolveMock = dns.resolveSrv as jest.MockedFunction<
+  typeof dns.resolveSrv
+>;
+
+describe('minestat-es', () => {
   afterEach(() => {
     jest.resetAllMocks();
   });
 
   describe('fetchServerInfo', () => {
-    type ConnectMock = (
-      port: number,
-      hostname: string,
-      fn?: CallableFunction
-    ) => Socket;
-    const connectMock = connect as unknown as jest.MockedFunction<ConnectMock>;
-    const resolveMock = dns.resolveSrv as jest.MockedFunction<
-      typeof dns.resolveSrv
-    >;
+    const hostname = 'example.com';
+    const address = '1.2.3.4';
+    const port = 25565;
     const offlineResult: ServerInfo = { online: false };
     const queryBytes = Buffer.from([0xfe, 0x01]);
     const validData = Buffer.from([
@@ -52,21 +84,6 @@ describe('minestat-es', () => {
       0x00, 0x00, 0x5a, 0x69
     ]);
     const shortData = Buffer.from([0x01, 0x02, 0x03]);
-    const createMockSocket = (
-      on: jest.Mock = jest.fn(),
-      end: jest.Mock = jest.fn(),
-      setTimeout: jest.Mock = jest.fn(),
-      write: jest.Mock = jest.fn()
-    ): Socket => {
-      const result = new Socket();
-
-      result.on = on;
-      result.end = end;
-      result.setTimeout = setTimeout;
-      result.write = write;
-
-      return result;
-    };
 
     test('writes two bytes when connected', (done) => {
       const socket = createMockSocket();
