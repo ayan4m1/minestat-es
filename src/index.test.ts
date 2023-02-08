@@ -98,7 +98,7 @@ describe('minestat-es', () => {
           expect(mockHost).toBe(address);
           expect(mockFn).toBeInstanceOf(Function);
 
-          setTimeout(() => {
+          setImmediate(() => {
             expect(socket.write).not.toHaveBeenCalled();
 
             if (mockFn) {
@@ -108,7 +108,7 @@ describe('minestat-es', () => {
             expect(socket.write).toHaveBeenCalledWith(queryBytes);
 
             done();
-          }, 10);
+          });
 
           return socket;
         }
