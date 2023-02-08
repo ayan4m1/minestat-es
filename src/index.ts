@@ -21,6 +21,7 @@ function stripString(str: string): string {
  */
 export interface ServerInfo {
   online: boolean;
+  error?: Error;
   version?: string;
   motd?: string;
   players?: number;
@@ -85,7 +86,8 @@ export async function fetchServerInfo(
   return new Promise((resolve, reject) => {
     // guard against any exceptions that might occur
     try {
-      const resolveOffline = () => resolve({ online: false });
+      const resolveOffline = (error?: Error) =>
+        resolve({ online: false, error });
       const client = connect(port, address, () => {
         client.write(queryBytes);
       });
@@ -96,7 +98,7 @@ export async function fetchServerInfo(
       });
       client.on('error', (error) => {
         client.end();
-        reject(error);
+        resolveOffline(error);
       });
       client.on('data', (raw) => {
         client.end();
@@ -110,7 +112,9 @@ export async function fetchServerInfo(
 
         // ensure required data is available
         if (info.length < 6) {
-          return reject(new Error('Got invalid reply from Minecraft server!'));
+          return resolveOffline(
+            new Error('Got invalid reply from Minecraft server!')
+          );
         }
 
         // attempt to parse data from server
@@ -121,7 +125,9 @@ export async function fetchServerInfo(
 
         // validate player count parsing
         if (isNaN(players) || isNaN(maxPlayers)) {
-          return reject(new Error('Failed to parse player count numbers!'));
+          return resolveOffline(
+            new Error('Failed to parse player count numbers!')
+          );
         }
 
         // return server info

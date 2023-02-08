@@ -152,12 +152,10 @@ describe('minestat-es', () => {
 
       connectMock.mockImplementation(() => socket);
 
-      expect.assertions(1);
-      try {
-        await fetchServerInfo({ address, port });
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      const { online, error } = await fetchServerInfo({ address, port });
+
+      expect(online).toBeFalsy();
+      expect(error).toEqual(expectedError);
     });
     test('empty reply from server', async () => {
       const socket = createMockSocket(
@@ -177,10 +175,9 @@ describe('minestat-es', () => {
 
       connectMock.mockImplementation(() => socket);
 
-      const result = await fetchServerInfo({ address, port });
+      const { online } = await fetchServerInfo({ address, port });
 
-      expect(result).not.toBeNull();
-      expect(result.online).toBeFalsy();
+      expect(online).toBeFalsy();
     });
     test('short reply from server', async () => {
       const socket = createMockSocket(
@@ -202,12 +199,10 @@ describe('minestat-es', () => {
 
       connectMock.mockImplementation(() => socket);
 
-      expect.assertions(1);
-      try {
-        await fetchServerInfo({ address, port });
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      const { online, error } = await fetchServerInfo({ address, port });
+
+      expect(online).toBeFalsy();
+      expect(error).toEqual(expectedError);
     });
     test('invalid player count', async () => {
       const socket = createMockSocket(
@@ -227,12 +222,10 @@ describe('minestat-es', () => {
 
       connectMock.mockImplementation(() => socket);
 
-      expect.assertions(1);
-      try {
-        await fetchServerInfo({ address, port });
-      } catch (error) {
-        expect(error).toEqual(expectedError);
-      }
+      const { online, error } = await fetchServerInfo({ address, port });
+
+      expect(online).toBeFalsy();
+      expect(error).toEqual(expectedError);
     });
     test('valid reply from server', async () => {
       const socket = createMockSocket(
@@ -251,10 +244,9 @@ describe('minestat-es', () => {
 
       connectMock.mockImplementation(() => socket);
 
-      const result = await fetchServerInfo({ address, port });
+      const { online } = await fetchServerInfo({ address, port });
 
-      expect(result).not.toBeNull();
-      expect(result.online).toBeTruthy();
+      expect(online).toBeTruthy();
     });
     test('resolveSrv throws error', async () => {
       const expectedError = new Error('Something failed.');
@@ -304,9 +296,9 @@ describe('minestat-es', () => {
       connectMock.mockImplementation(() => socket);
       resolveMock.mockImplementation(() => Promise.resolve(mockData));
 
-      const result = await fetchServerInfo({ hostname });
+      const { online } = await fetchServerInfo({ hostname });
 
-      expect(result).not.toBeNull();
+      expect(online).toBeTruthy();
     });
   });
 });
