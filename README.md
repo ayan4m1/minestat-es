@@ -48,9 +48,9 @@ Regardless of which way it was invoked, `fetchServerInfo` returns a promise whic
 
 If the server is offline, the object will also contain the properties:
 
-| Key   | Type    | Description                     |
-| ----- | ------- | ------------------------------- |
-| error | `Error` | A socket error, if one occurred |
+| Key   | Type    | Description                                           |
+| ----- | ------- | ----------------------------------------------------- |
+| error | `Error` | A communications or validation error, if one occurred |
 
 If the server is online, the object will also contain the following properties:
 
@@ -61,7 +61,7 @@ If the server is online, the object will also contain the following properties:
 | players    | `number` | The number of players on the server               |
 | maxPlayers | `number` | The maximum number of players the server supports |
 
-`fetchServerInfo` rejects if an error occurs during SRV record resolution, socket operations, or parsing/validating the server response.
+`fetchServerInfo` rejects if an error occurs during SRV record resolution.
 
 ## example
 
