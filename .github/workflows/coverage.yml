@@ -11,5 +11,6 @@ jobs:
         with:
           node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
+      - run: npm ci
       - run: npm run test
       - uses: codecov/codecov-action@v3
