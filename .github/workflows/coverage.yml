@@ -1,16 +1,16 @@
 name: Upload coverage on push
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
 jobs:
   cover:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
-          registry-url: "https://registry.npmjs.org"
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run test
       - uses: codecov/codecov-action@v3
