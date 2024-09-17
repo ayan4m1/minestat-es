@@ -1,11 +1,14 @@
 import eslint from '@eslint/js';
-import tslint from 'typescript-eslint';
+import { config, configs } from 'typescript-eslint';
+import eslintPluginImportX from 'eslint-plugin-import-x';
 import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 
-export default tslint.config(
+export default config(
   eslint.configs.recommended,
-  ...tslint.configs.recommended,
+  ...configs.recommended,
   eslintPluginPrettier,
+  eslintPluginImportX.flatConfigs.recommended,
+  eslintPluginImportX.flatConfigs.typescript,
   {
     rules: {
       'no-control-regex': 'off'
