@@ -279,7 +279,7 @@ describe('minestat-es', () => {
     });
     test('no SRV records', async () => {
       const expectedError = new Error(
-        `No DNS records found for hostname ${hostname}`
+        `No DNS records found for hostname _minecraft._tcp.${hostname}`
       );
       const mockData: SrvRecord[] = [];
 
@@ -288,6 +288,21 @@ describe('minestat-es', () => {
       expect.assertions(1);
       try {
         await fetchServerInfo({ hostname });
+      } catch (error) {
+        expect(error).toEqual(expectedError);
+      }
+    });
+    test('does not prepend _minecraft._tcp. to hostname if already present', async () => {
+      const expectedError = new Error(
+        `No DNS records found for hostname _minecraft._tcp.${hostname}`
+      );
+      const mockData: SrvRecord[] = [];
+
+      resolveMock.mockImplementation(() => Promise.resolve(mockData));
+
+      expect.assertions(1);
+      try {
+        await fetchServerInfo({ hostname: `_minecraft._tcp.${hostname}` });
       } catch (error) {
         expect(error).toEqual(expectedError);
       }
@@ -307,7 +322,7 @@ describe('minestat-es', () => {
           )
       );
       const mockData: SrvRecord[] = [
-        { name: hostname, port, priority: 1, weight: 1 }
+        { name: `_minecraft._tcp.${hostname}`, port, priority: 1, weight: 1 }
       ];
 
       connectMock.mockImplementation(() => socket);

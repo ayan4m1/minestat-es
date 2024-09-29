@@ -58,12 +58,11 @@ export async function fetchServerInfo(
   // obtain address/port from DNS if required
   if ('hostname' in options) {
     const hostOptions = options as HostnameArgs;
-    const records = await dns.resolveSrv(hostOptions.hostname);
+    const mcHost = `${hostOptions.hostname.startsWith('_minecraft._tcp.') ? '' : '_minecraft._tcp.'}${hostOptions.hostname}`;
+    const records = await dns.resolveSrv(mcHost);
 
     if (!records.length) {
-      throw new Error(
-        `No DNS records found for hostname ${hostOptions.hostname}`
-      );
+      throw new Error(`No DNS records found for hostname ${mcHost}`);
     }
 
     const record = records[Math.floor(Math.random() * records.length)];

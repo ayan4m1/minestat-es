@@ -34,6 +34,7 @@ fetchServerInfo({
 To perform an SRV record lookup and query a Minecraft server using only a hostname, use:
 
 ```ts
+// makes an SRV lookup for _minecraft._tcp.example.com
 fetchServerInfo({
   hostname: 'example.com',
   timeout: 1000
@@ -71,6 +72,7 @@ import { fetchServerInfo } from 'minestat-es';
 (async () => {
   try {
     // query by hostname (SRV lookup)
+    // _minecraft._tcp. will be prepended unless you supply it
     const { online, error, players } = await fetchServerInfo({
       hostname: 'mc.example.com'
     });
