@@ -13,4 +13,4 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run test
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
