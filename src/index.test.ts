@@ -69,13 +69,20 @@ describe('minestat-es', () => {
     const port = 25565;
     const offlineResult: ServerInfo = { online: false };
     const queryBytes = Buffer.from([0xfe, 0x01]);
-    const validData = Buffer.from([
-      0xff, 0x00, 0x23, 0x00, 0xa7, 0x00, 0x31, 0x00, 0x00, 0x00, 0x34, 0x00,
-      0x37, 0x00, 0x00, 0x00, 0x31, 0x00, 0x2e, 0x00, 0x34, 0x00, 0x2e, 0x00,
-      0x32, 0x00, 0x00, 0x00, 0x41, 0x00, 0x20, 0x00, 0x53, 0x00, 0x65, 0x00,
-      0x72, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, 0x00, 0x00, 0x30, 0x00,
-      0x00, 0x00, 0x32, 0x00, 0x30
-    ]);
+    const validData = [
+      Buffer.from([
+        0xff, 0x00, 0x19, 0x00, 0xa7, 0x00, 0x31, 0x00, 0x00, 0x00, 0x34, 0x00,
+        0x37, 0x00, 0x00, 0x00, 0x31, 0x00, 0x2e, 0x00, 0x34, 0x00, 0x2e, 0x00,
+        0x32, 0x00, 0x00, 0x00, 0x41, 0x00, 0x20, 0x00, 0x53, 0x00, 0x65, 0x00,
+        0x72, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, 0x00, 0x00, 0x30, 0x00,
+        0x00, 0x00, 0x32, 0x00, 0x30
+      ]),
+      Buffer.from([
+        0xff, 0x00, 0x13, 0x00, 0xa7, 0x00, 0x31, 0x00, 0x00, 0x00, 0x31, 0x00,
+        0x32, 0x00, 0x37, 0x00, 0x00, 0x00, 0x31, 0x00, 0x2e, 0x00, 0x31, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x32, 0x00, 0x30
+      ])
+    ];
     const invalidPlayerData = Buffer.from([
       0xff, 0x00, 0x23, 0x00, 0xa7, 0x00, 0x31, 0x00, 0x00, 0x00, 0x34, 0x00,
       0x37, 0x00, 0x00, 0x00, 0x31, 0x00, 0x2e, 0x00, 0x34, 0x00, 0x2e, 0x00,
@@ -83,7 +90,12 @@ describe('minestat-es', () => {
       0x72, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, 0x00, 0x00, 0x30, 0x00,
       0x00, 0x00, 0x5a, 0x69
     ]);
-    const shortData = Buffer.from([0x01, 0x02, 0x03]);
+    const emptyData = Buffer.from([]);
+    const invalidData = [
+      Buffer.from([0xff, 0x30, 0x00]),
+      Buffer.from([0xfa, 0xbe, 0xef, 0xff, 0xff, 0xff, 0xff])
+    ];
+    const shortData = Buffer.from([0xff, 0x00, 0x00]);
 
     test('writes two bytes when connected', (done) => {
       const socket = createMockSocket();
@@ -196,6 +208,75 @@ describe('minestat-es', () => {
 
       expect(online).toBeFalsy();
     });
+    test.each(invalidData)('invalid reply from server', async (data) => {
+      const socket = createMockSocket(
+        jest
+          .fn()
+          .mockImplementation(
+            (eventName: string, callback: CallableFunction) => {
+              if (eventName !== 'data') {
+                return;
+              }
+
+              callback(data);
+            }
+          )
+      );
+      const expectedError = new Error(
+        'Got invalid reply from Minecraft server!'
+      );
+
+      connectMock.mockImplementation(() => socket);
+
+      const { online, error } = await fetchServerInfo({ address, port });
+
+      expect(online).toBeFalsy();
+      expect(error).toEqual(expectedError);
+    });
+    test('empty reply from socket', async () => {
+      const socket = createMockSocket(
+        jest
+          .fn()
+          .mockImplementation(
+            (eventName: string, callback: CallableFunction) => {
+              if (eventName !== 'data') {
+                return;
+              }
+
+              callback(null);
+            }
+          )
+      );
+
+      connectMock.mockImplementation(() => socket);
+
+      const { online, error } = await fetchServerInfo({ address, port });
+
+      expect(online).toBeFalsy();
+      expect(error).toBeUndefined();
+    });
+    test('empty reply from server', async () => {
+      const socket = createMockSocket(
+        jest
+          .fn()
+          .mockImplementation(
+            (eventName: string, callback: CallableFunction) => {
+              if (eventName !== 'data') {
+                return;
+              }
+
+              callback(emptyData);
+            }
+          )
+      );
+
+      connectMock.mockImplementation(() => socket);
+
+      const { online, error } = await fetchServerInfo({ address, port });
+
+      expect(online).toBeFalsy();
+      expect(error).toBeUndefined();
+    });
     test('short reply from server', async () => {
       const socket = createMockSocket(
         jest
@@ -210,9 +291,7 @@ describe('minestat-es', () => {
             }
           )
       );
-      const expectedError = new Error(
-        'Got invalid reply from Minecraft server!'
-      );
+      const expectedError = new Error('Got short reply from Minecraft server!');
 
       connectMock.mockImplementation(() => socket);
 
@@ -244,7 +323,7 @@ describe('minestat-es', () => {
       expect(online).toBeFalsy();
       expect(error).toEqual(expectedError);
     });
-    test('valid reply from server', async () => {
+    test.each(validData)('valid reply from server', async (data) => {
       const socket = createMockSocket(
         jest
           .fn()
@@ -254,7 +333,7 @@ describe('minestat-es', () => {
                 return;
               }
 
-              callback(validData);
+              callback(data);
             }
           )
       );
@@ -307,7 +386,7 @@ describe('minestat-es', () => {
         expect(error).toEqual(expectedError);
       }
     });
-    test('successful SRV lookup', async () => {
+    test.each(validData)('successful SRV lookup', async (data) => {
       const socket = createMockSocket(
         jest
           .fn()
@@ -317,7 +396,7 @@ describe('minestat-es', () => {
                 return;
               }
 
-              callback(validData);
+              callback(data);
             }
           )
       );

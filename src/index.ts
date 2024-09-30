@@ -7,16 +7,6 @@ import { promises as dns } from 'dns';
 const queryBytes = Buffer.from([0xfe, 0x01]);
 
 /**
- * Remove empty Unicode characters from a string.
- *
- * @param str Input string.
- * @returns String with Unicode characters removed.
- */
-function stripString(str: string): string {
-  return str.replace(/\u0000/g, '');
-}
-
-/**
  * Contains an `online` boolean plus the server reply data.
  */
 export interface ServerInfo {
@@ -103,24 +93,44 @@ export async function fetchServerInfo(
         client.end();
 
         // empty response can indicate a server that is still starting up
-        if (raw === null || raw.length === 0) {
+        if (!raw?.length) {
           return resolveOffline();
         }
 
-        const info = raw.toString().split('\x00\x00\x00');
-
-        // ensure required data is available
-        if (info.length < 6) {
+        if (raw[0] !== 0xff) {
           return resolveOffline(
             new Error('Got invalid reply from Minecraft server!')
           );
         }
 
+        // read reply length
+        const bufferSize = raw.readInt16BE(1);
+
+        if (bufferSize < 0 || bufferSize > raw.byteLength) {
+          return resolveOffline(
+            new Error('Got invalid reply from Minecraft server!')
+          );
+        }
+
+        // allocate, copy, and swap byte order
+        const buffer = Buffer.alloc(bufferSize * 2, 0, 'binary');
+        raw.copy(buffer, 0, 3);
+        buffer.swap16();
+
+        // decode into utf-16 tokens
+        const info = buffer.toString('utf-16le').split('\x00');
+
+        if (info.length < 6) {
+          return resolveOffline(
+            new Error('Got short reply from Minecraft server!')
+          );
+        }
+
         // attempt to parse data from server
-        const version = stripString(info[2]);
-        const motd = stripString(info[3]);
-        const players = parseInt(stripString(info[4]), 10);
-        const maxPlayers = parseInt(stripString(info[5]), 10);
+        const version = info[2];
+        const motd = info[3];
+        const players = parseInt(info[4], 10);
+        const maxPlayers = parseInt(info[5], 10);
 
         // validate player count parsing
         if (isNaN(players) || isNaN(maxPlayers)) {
