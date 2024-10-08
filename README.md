@@ -17,6 +17,8 @@
 
 ## usage
 
+This library supports two methods of querying the server. The _legacy_ protocol works with any Minecraft server. The _modern_ protocol is only compatible with Minecraft v1.6 and higher.
+
 ### by address/port
 
 To query a Minecraft server using an IP/hostname and a port, use:

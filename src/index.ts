@@ -1,35 +1,10 @@
 import { connect } from 'net';
 import { promises as dns } from 'dns';
 
-/**
- * These two bytes will cause the server to send a reply.
- */
-const queryBytes = Buffer.from([0xfe, 0x01]);
-
-/**
- * Contains an `online` boolean plus the server reply data.
- */
-export interface ServerInfo {
-  online: boolean;
-  error?: Error;
-  version?: string;
-  motd?: string;
-  players?: number;
-  maxPlayers?: number;
-}
-
-export interface CommonArgs {
-  timeout?: number;
-}
-
-export interface HostnameArgs extends CommonArgs {
-  hostname: string;
-}
-
-export interface AddressArgs extends CommonArgs {
-  address: string;
-  port: number;
-}
+import { QueryProtocol } from './protocol';
+import { LegacyQueryProtocol } from './legacy';
+import { ModernQueryProtocol } from './modern';
+import { AddressOpts, HostnameOpts, QueryProtocols, ServerInfo } from './types';
 
 /**
  * Open a TCP socket to query Minecraft server status.
@@ -40,14 +15,14 @@ export interface AddressArgs extends CommonArgs {
  * @returns Server information.
  */
 export async function fetchServerInfo(
-  options: HostnameArgs | AddressArgs
+  options: HostnameOpts | AddressOpts
 ): Promise<ServerInfo> {
   let address: string = null,
     port: number = null;
 
   // obtain address/port from DNS if required
   if ('hostname' in options) {
-    const hostOptions = options as HostnameArgs;
+    const hostOptions = options as HostnameOpts;
     const mcHost = `${hostOptions.hostname.startsWith('_minecraft._tcp.') ? '' : '_minecraft._tcp.'}${hostOptions.hostname}`;
     const records = await dns.resolveSrv(mcHost);
 
@@ -60,7 +35,7 @@ export async function fetchServerInfo(
     address = record.name;
     port = record.port;
   } else {
-    const addrOptions = options as AddressArgs;
+    const addrOptions = options as AddressOpts;
 
     address = addrOptions.address;
     port = addrOptions.port;
@@ -71,14 +46,28 @@ export async function fetchServerInfo(
     options.timeout = 5000;
   }
 
-  // perform socket connect/write/read/end
+  if (!options.protocol) {
+    options.protocol = QueryProtocols.Legacy;
+  }
+
   return new Promise((resolve, reject) => {
     // guard against any exceptions that might occur
     try {
+      let protocol: QueryProtocol = null;
+
+      switch (options.protocol) {
+        case QueryProtocols.Legacy:
+          protocol = new LegacyQueryProtocol();
+          break;
+        case QueryProtocols.Modern:
+          protocol = new ModernQueryProtocol();
+          break;
+      }
+
       const resolveOffline = (error?: Error) =>
         resolve({ online: false, error });
       const client = connect(port, address, () => {
-        client.write(queryBytes);
+        client.write(protocol.handshakePacket(address, port));
       });
 
       client.setTimeout(options.timeout, () => {
@@ -92,61 +81,7 @@ export async function fetchServerInfo(
       client.on('data', (raw) => {
         client.end();
 
-        // empty response can indicate a server that is still starting up
-        if (!raw?.length) {
-          return resolveOffline();
-        }
-
-        if (raw[0] !== 0xff) {
-          return resolveOffline(
-            new Error('Got invalid reply from Minecraft server!')
-          );
-        }
-
-        // read reply length
-        const bufferSize = raw.readInt16BE(1);
-
-        if (bufferSize < 0 || bufferSize > raw.byteLength) {
-          return resolveOffline(
-            new Error('Got invalid reply from Minecraft server!')
-          );
-        }
-
-        // allocate, copy, and swap byte order
-        const buffer = Buffer.alloc(bufferSize * 2, 0, 'binary');
-        raw.copy(buffer, 0, 3);
-        buffer.swap16();
-
-        // decode into utf-16 tokens
-        const info = buffer.toString('utf-16le').split('\x00');
-
-        if (info.length < 6) {
-          return resolveOffline(
-            new Error('Got short reply from Minecraft server!')
-          );
-        }
-
-        // attempt to parse data from server
-        const version = info[2];
-        const motd = info[3];
-        const players = parseInt(info[4], 10);
-        const maxPlayers = parseInt(info[5], 10);
-
-        // validate player count parsing
-        if (isNaN(players) || isNaN(maxPlayers)) {
-          return resolveOffline(
-            new Error('Failed to parse player count numbers!')
-          );
-        }
-
-        // return server info
-        resolve({
-          online: true,
-          version,
-          motd,
-          players,
-          maxPlayers
-        });
+        resolve(protocol.parse(raw));
       });
     } catch (error) {
       reject(error);
