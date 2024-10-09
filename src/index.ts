@@ -2,9 +2,12 @@ import { connect } from 'net';
 import { promises as dns } from 'dns';
 
 import { QueryProtocol } from './protocol';
-import { LegacyQueryProtocol } from './legacy';
-import { ModernQueryProtocol } from './modern';
+import { LegacyQueryProtocol } from './legacyProtocol';
+import { ModernQueryProtocol } from './modernProtocol';
 import { AddressOpts, HostnameOpts, QueryProtocols, ServerInfo } from './types';
+
+const prefixWith = (base: string, prefix: string): string =>
+  `${base.startsWith(prefix) ? '' : prefix}${base}`;
 
 /**
  * Open a TCP socket to query Minecraft server status.
@@ -23,7 +26,7 @@ export async function fetchServerInfo(
   // obtain address/port from DNS if required
   if ('hostname' in options) {
     const hostOptions = options as HostnameOpts;
-    const mcHost = `${hostOptions.hostname.startsWith('_minecraft._tcp.') ? '' : '_minecraft._tcp.'}${hostOptions.hostname}`;
+    const mcHost = prefixWith(hostOptions.hostname, '_minecraft._tcp.');
     const records = await dns.resolveSrv(mcHost);
 
     if (!records.length) {
