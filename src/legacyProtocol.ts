@@ -4,17 +4,20 @@ import { QueryProtocol } from './protocol';
 /**
  * These two bytes will cause the server to send a reply.
  */
-const queryBytes = Buffer.from([0xfe, 0x01]);
+export const queryBytes = Buffer.from([0xfe, 0x01]);
 
 export class LegacyQueryProtocol implements QueryProtocol {
   handshakePacket(): Buffer {
     return queryBytes;
   }
 
-  parse(response: Buffer): ServerInfo {
+  parse(response?: Buffer): ServerInfo {
     // empty response can indicate a server that is still starting up
     if (!response?.length) {
-      return { online: false };
+      return {
+        online: false,
+        error: new Error('Got empty reply from Minecraft server!')
+      };
     }
 
     if (response[0] !== 0xff) {

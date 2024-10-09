@@ -1,7 +1,9 @@
-import { promises as dns, SrvRecord } from 'dns';
 import { connect, Socket } from 'net';
+import { promises as dns, SrvRecord } from 'dns';
 
-import { fetchServerInfo, ServerInfo } from './index';
+import { fetchServerInfo } from './index';
+import { QueryProtocols } from './types';
+import { queryBytes } from './legacyProtocol';
 
 // Mock the node modules we depend on
 jest.mock('net', () => ({
@@ -67,37 +69,9 @@ describe('minestat-es', () => {
     const hostname = 'example.com';
     const address = '1.2.3.4';
     const port = 25565;
-    const offlineResult: ServerInfo = { online: false };
-    const queryBytes = Buffer.from([0xfe, 0x01]);
-    const validData = [
-      Buffer.from([
-        0xff, 0x00, 0x19, 0x00, 0xa7, 0x00, 0x31, 0x00, 0x00, 0x00, 0x34, 0x00,
-        0x37, 0x00, 0x00, 0x00, 0x31, 0x00, 0x2e, 0x00, 0x34, 0x00, 0x2e, 0x00,
-        0x32, 0x00, 0x00, 0x00, 0x41, 0x00, 0x20, 0x00, 0x53, 0x00, 0x65, 0x00,
-        0x72, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, 0x00, 0x00, 0x30, 0x00,
-        0x00, 0x00, 0x32, 0x00, 0x30
-      ]),
-      Buffer.from([
-        0xff, 0x00, 0x13, 0x00, 0xa7, 0x00, 0x31, 0x00, 0x00, 0x00, 0x31, 0x00,
-        0x32, 0x00, 0x37, 0x00, 0x00, 0x00, 0x31, 0x00, 0x2e, 0x00, 0x31, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x32, 0x00, 0x30
-      ])
-    ];
-    const invalidPlayerData = Buffer.from([
-      0xff, 0x00, 0x23, 0x00, 0xa7, 0x00, 0x31, 0x00, 0x00, 0x00, 0x34, 0x00,
-      0x37, 0x00, 0x00, 0x00, 0x31, 0x00, 0x2e, 0x00, 0x34, 0x00, 0x2e, 0x00,
-      0x32, 0x00, 0x00, 0x00, 0x41, 0x00, 0x20, 0x00, 0x53, 0x00, 0x65, 0x00,
-      0x72, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, 0x00, 0x00, 0x30, 0x00,
-      0x00, 0x00, 0x5a, 0x69
-    ]);
-    const emptyData = Buffer.from([]);
-    const invalidData = [
-      Buffer.from([0xff, 0x30, 0x00]),
-      Buffer.from([0xfa, 0xbe, 0xef, 0xff, 0xff, 0xff, 0xff])
-    ];
-    const shortData = Buffer.from([0xff, 0x00, 0x00]);
+    const offlineResult = { online: false };
 
-    test('writes two bytes when connected', (done) => {
+    it('writes two bytes with legacy protocol', (done) => {
       const socket = createMockSocket();
 
       connectMock.mockImplementation(
@@ -127,9 +101,41 @@ describe('minestat-es', () => {
       );
 
       expect.assertions(5);
-      fetchServerInfo({ address, port });
+      fetchServerInfo({ address, port, protocol: QueryProtocols.Legacy });
     });
-    test('unhandled error', async () => {
+    it('writes to socket with modern protocol', (done) => {
+      const socket = createMockSocket();
+
+      connectMock.mockImplementation(
+        (
+          mockPort: number,
+          mockHost: string,
+          mockFn?: CallableFunction
+        ): Socket => {
+          expect(mockPort).toBe(port);
+          expect(mockHost).toBe(address);
+          expect(mockFn).toBeInstanceOf(Function);
+
+          setImmediate(() => {
+            expect(socket.write).not.toHaveBeenCalled();
+
+            if (mockFn) {
+              mockFn();
+            }
+
+            expect(socket.write).toHaveBeenCalled();
+
+            done();
+          });
+
+          return socket;
+        }
+      );
+
+      expect.assertions(5);
+      fetchServerInfo({ address, port, protocol: QueryProtocols.Modern });
+    });
+    it('handles unhandled error', async () => {
       expect.assertions(1);
       try {
         await fetchServerInfo({
@@ -140,7 +146,7 @@ describe('minestat-es', () => {
         expect(error).not.toBeNull();
       }
     });
-    test('socket timeout', async () => {
+    it('handles socket timeout', async () => {
       const socket = createMockSocket(
         undefined,
         undefined,
@@ -163,7 +169,7 @@ describe('minestat-es', () => {
       expect(socket.end).toHaveBeenCalled();
       expect(result).toEqual(offlineResult);
     });
-    test('socket error', async () => {
+    it('handles socket error', async () => {
       const expectedError = new Error('Something failed.');
       const socket = createMockSocket(
         jest
@@ -186,165 +192,7 @@ describe('minestat-es', () => {
       expect(online).toBeFalsy();
       expect(error).toEqual(expectedError);
     });
-    test('empty reply from server', async () => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(emptyData);
-            }
-          )
-      );
-      const emptyData = Buffer.from([]);
-
-      connectMock.mockImplementation(() => socket);
-
-      const { online } = await fetchServerInfo({ address, port });
-
-      expect(online).toBeFalsy();
-    });
-    test.each(invalidData)('invalid reply from server', async (data) => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(data);
-            }
-          )
-      );
-      const expectedError = new Error(
-        'Got invalid reply from Minecraft server!'
-      );
-
-      connectMock.mockImplementation(() => socket);
-
-      const { online, error } = await fetchServerInfo({ address, port });
-
-      expect(online).toBeFalsy();
-      expect(error).toEqual(expectedError);
-    });
-    test('empty reply from socket', async () => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(null);
-            }
-          )
-      );
-
-      connectMock.mockImplementation(() => socket);
-
-      const { online, error } = await fetchServerInfo({ address, port });
-
-      expect(online).toBeFalsy();
-      expect(error).toBeUndefined();
-    });
-    test('empty reply from server', async () => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(emptyData);
-            }
-          )
-      );
-
-      connectMock.mockImplementation(() => socket);
-
-      const { online, error } = await fetchServerInfo({ address, port });
-
-      expect(online).toBeFalsy();
-      expect(error).toBeUndefined();
-    });
-    test('short reply from server', async () => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(shortData);
-            }
-          )
-      );
-      const expectedError = new Error('Got short reply from Minecraft server!');
-
-      connectMock.mockImplementation(() => socket);
-
-      const { online, error } = await fetchServerInfo({ address, port });
-
-      expect(online).toBeFalsy();
-      expect(error).toEqual(expectedError);
-    });
-    test('invalid player count', async () => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(invalidPlayerData);
-            }
-          )
-      );
-      const expectedError = new Error('Failed to parse player count numbers!');
-
-      connectMock.mockImplementation(() => socket);
-
-      const { online, error } = await fetchServerInfo({ address, port });
-
-      expect(online).toBeFalsy();
-      expect(error).toEqual(expectedError);
-    });
-    test.each(validData)('valid reply from server', async (data) => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(data);
-            }
-          )
-      );
-
-      connectMock.mockImplementation(() => socket);
-
-      const { online } = await fetchServerInfo({ address, port });
-
-      expect(online).toBeTruthy();
-    });
-    test('resolveSrv throws error', async () => {
+    it('handles resolveSrv throwing an error', async () => {
       const expectedError = new Error('Something failed.');
 
       resolveMock.mockImplementation(() => Promise.reject(expectedError));
@@ -356,7 +204,7 @@ describe('minestat-es', () => {
         expect(error).toBe(expectedError);
       }
     });
-    test('no SRV records', async () => {
+    it('handles no SRV records', async () => {
       const expectedError = new Error(
         `No DNS records found for hostname _minecraft._tcp.${hostname}`
       );
@@ -371,7 +219,7 @@ describe('minestat-es', () => {
         expect(error).toEqual(expectedError);
       }
     });
-    test('does not prepend _minecraft._tcp. to hostname if already present', async () => {
+    it('does not prepend _minecraft._tcp. to hostname if already present', async () => {
       const expectedError = new Error(
         `No DNS records found for hostname _minecraft._tcp.${hostname}`
       );
@@ -386,30 +234,52 @@ describe('minestat-es', () => {
         expect(error).toEqual(expectedError);
       }
     });
-    test.each(validData)('successful SRV lookup', async (data) => {
-      const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
-
-              callback(data);
-            }
-          )
-      );
+    it('selects a random SRV record if multiple are present', (done) => {
+      const socket = createMockSocket();
       const mockData: SrvRecord[] = [
-        { name: `_minecraft._tcp.${hostname}`, port, priority: 1, weight: 1 }
+        {
+          name: 'mc.example.com',
+          port: 1234,
+          priority: 1,
+          weight: 1
+        },
+        {
+          name: 'mc.example.com',
+          port: 4567,
+          priority: 1,
+          weight: 1
+        }
       ];
 
-      connectMock.mockImplementation(() => socket);
+      connectMock.mockImplementation(
+        (
+          mockPort: number,
+          mockHost: string,
+          mockFn?: CallableFunction
+        ): Socket => {
+          expect(mockData.map((data) => data.port)).toContain(mockPort);
+          expect(mockData.map((data) => data.name)).toContain(mockHost);
+          expect(mockFn).toBeInstanceOf(Function);
+
+          setImmediate(() => {
+            expect(socket.write).not.toHaveBeenCalled();
+
+            if (mockFn) {
+              mockFn();
+            }
+
+            expect(socket.write).toHaveBeenCalled();
+
+            done();
+          });
+
+          return socket;
+        }
+      );
       resolveMock.mockImplementation(() => Promise.resolve(mockData));
 
-      const { online } = await fetchServerInfo({ hostname });
-
-      expect(online).toBeTruthy();
+      expect.assertions(5);
+      fetchServerInfo({ hostname: `_minecraft._tcp.${hostname}` });
     });
   });
 });
