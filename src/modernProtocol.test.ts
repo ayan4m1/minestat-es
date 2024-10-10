@@ -1,6 +1,10 @@
+import varint from 'varint';
 import { readFileSync } from 'fs';
 
 import { buildMotd, ModernQueryProtocol } from './modernProtocol';
+
+// eslint-disable-next-line import-x/no-named-as-default-member
+const { encodingLength } = varint;
 
 const emptyData = [undefined, Buffer.from([])];
 const validData = [readFileSync('./test/valid.json')];
@@ -8,6 +12,14 @@ const invalidData = [
   readFileSync('./test/invalid.json'),
   readFileSync('./test/empty.json')
 ];
+
+const padData = (data: Buffer): Buffer => {
+  const skipBytes = encodingLength(data.length) * 2 + 1;
+  const padded = Buffer.alloc(data.byteLength + skipBytes);
+  data.copy(padded, skipBytes);
+
+  return padded;
+};
 
 describe('ModernQueryProtocol', () => {
   const address = '1.2.3.4';
@@ -22,9 +34,7 @@ describe('ModernQueryProtocol', () => {
   });
 
   it.each(validData)('can parse a valid response', (data) => {
-    const { online, error } = protocol.parse(data);
-
-    console.dir(error);
+    const { online, error } = protocol.parse(padData(data));
 
     expect(online).toBeTruthy();
     expect(error).toBeFalsy();
@@ -39,7 +49,7 @@ describe('ModernQueryProtocol', () => {
   });
 
   it.each(invalidData)('can handle invalid data', (data) => {
-    const { online, error } = protocol.parse(data);
+    const { online, error } = protocol.parse(padData(data));
 
     expect(online).toBeFalsy();
     expect(error).toBeTruthy();
