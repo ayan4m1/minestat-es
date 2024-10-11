@@ -17,13 +17,13 @@
 
 ## usage
 
-This library supports two methods of querying the server. The _legacy_ protocol works with any Minecraft server. The _modern_ protocol is only compatible with Minecraft v1.6 and higher.
-
 ### by address/port
 
 To query a Minecraft server using an IP/hostname and a port, use:
 
 ```ts
+import { fetchServerInfo } from 'minestat-es';
+
 fetchServerInfo({
   address: '1.2.3.4',
   port: 25565,
@@ -36,6 +36,8 @@ fetchServerInfo({
 To perform an SRV record lookup and query a Minecraft server using only a hostname, use:
 
 ```ts
+import { fetchServerInfo } from 'minestat-es';
+
 // makes an SRV lookup for _minecraft._tcp.example.com
 fetchServerInfo({
   hostname: 'example.com',
@@ -43,7 +45,22 @@ fetchServerInfo({
 });
 ```
 
-Regardless of which way it was invoked, `fetchServerInfo` returns a promise which will resolve with an object containing the following properties:
+### query protocols
+
+This library supports two methods of querying the server. The _legacy_ protocol works with any Minecraft server. The _modern_ protocol is only compatible with Minecraft v1.6 and higher. The **default** protocol is the legacy protocol.
+
+To specify the modern protocol, pass it as the `protocol` option:
+
+```ts
+import { fetchServerInfo, QueryProtocols } from 'minestat-es';
+
+fetchServerInfo({
+  hostname: 'example.com',
+  protocol: QueryProtocols.Modern
+});
+```
+
+Regardless of the way it was invoked, `fetchServerInfo` returns a promise which will resolve with an object containing the following properties:
 
 | Key    | Type      | Description                         |
 | ------ | --------- | ----------------------------------- |
