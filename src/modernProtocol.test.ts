@@ -1,10 +1,7 @@
-import varint from 'varint';
 import { readFileSync } from 'fs';
 
+import { padData } from './index.test';
 import { buildMotd, ModernQueryProtocol } from './modernProtocol';
-
-// eslint-disable-next-line import-x/no-named-as-default-member
-const { encodingLength } = varint;
 
 const emptyData = [undefined, Buffer.from([])];
 const validData = [readFileSync('./test/valid.json')];
@@ -12,14 +9,6 @@ const invalidData = [
   readFileSync('./test/invalid.json'),
   readFileSync('./test/empty.json')
 ];
-
-const padData = (data: Buffer): Buffer => {
-  const skipBytes = encodingLength(data.length) * 2 + 1;
-  const padded = Buffer.alloc(data.byteLength + skipBytes);
-  data.copy(padded, skipBytes);
-
-  return padded;
-};
 
 describe('ModernQueryProtocol', () => {
   const address = '1.2.3.4';
