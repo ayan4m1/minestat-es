@@ -64,7 +64,6 @@ export async function fetchServerInfo(
           break;
         case QueryProtocols.Modern:
           protocol = new ModernQueryProtocol();
-          break;
       }
 
       const resolveOffline = (error?: Error) =>

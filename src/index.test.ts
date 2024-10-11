@@ -1,9 +1,14 @@
+import varint from 'varint';
 import { connect, Socket } from 'net';
 import { promises as dns, SrvRecord } from 'dns';
 
 import { fetchServerInfo } from './index';
 import { QueryProtocols } from './types';
 import { queryBytes } from './legacyProtocol';
+import { readFileSync } from 'fs';
+
+// eslint-disable-next-line import-x/no-named-as-default-member
+const { encodingLength } = varint;
 
 // Mock the node modules we depend on
 jest.mock('net', () => ({
@@ -18,6 +23,14 @@ jest.mock('dns', () => ({
     resolveSrv: jest.fn()
   }
 }));
+
+export const padData = (data: Buffer): Buffer => {
+  const skipBytes = encodingLength(data.length) * 2 + 1;
+  const padded = Buffer.alloc(data.byteLength + skipBytes);
+  data.copy(padded, skipBytes);
+
+  return padded;
+};
 
 /**
  * Represents a function which takes a port, hostname, and callback
@@ -134,6 +147,33 @@ describe('minestat-es', () => {
 
       expect.assertions(5);
       fetchServerInfo({ address, port, protocol: QueryProtocols.Modern });
+    });
+    it('parses modern response if received', async () => {
+      const socket = createMockSocket(
+        jest
+          .fn()
+          .mockImplementation(
+            (eventName: string, callback: CallableFunction) => {
+              if (eventName !== 'data') {
+                return;
+              }
+
+              callback(padData(readFileSync('./test/valid.json')));
+            }
+          )
+      );
+
+      connectMock.mockImplementation(() => socket);
+
+      const { online, error } = await fetchServerInfo({
+        address,
+        port,
+        protocol: QueryProtocols.Modern
+      });
+
+      // todo: assert that ModernQueryProtocol.parse has been called
+      expect(online).toBeTruthy();
+      expect(error).toBeFalsy();
     });
     it('handles unhandled error', async () => {
       expect.assertions(1);
