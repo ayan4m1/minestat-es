@@ -1,6 +1,6 @@
 # minestat-es
 
-[![Package Version](https://badge.fury.io/js/minestat-es.svg?)](https://www.npmjs.com/package/minestat-es)
+[![Package Version](https://badge.fury.io/js/minestat-es.svg?2)](https://www.npmjs.com/package/minestat-es)
 [![Code Coverage](https://codecov.io/gh/ayan4m1/minestat-es/branch/main/graph/badge.svg?token=UKTTU7XNAM)](https://codecov.io/gh/ayan4m1/minestat-es)
 
 ## features
@@ -74,12 +74,15 @@ If the server is offline, the object will also contain the properties:
 
 If the server is online, the object will also contain the following properties:
 
-| Key        | Type     | Description                                       |
-| ---------- | -------- | ------------------------------------------------- |
-| version    | `string` | The server's version string                       |
-| motd       | `string` | The server's Message of the Day                   |
-| players    | `number` | The number of players on the server               |
-| maxPlayers | `number` | The maximum number of players the server supports |
+| Key        | Type       | Description                                               |
+| ---------- | ---------- | --------------------------------------------------------- |
+| version    | `string`   | The server's version string                               |
+| motd       | `string`   | The server's Message of the Day                           |
+| players    | `number`   | The number of players on the server                       |
+| maxPlayers | `number`   | The maximum number of players the server supports         |
+| playerInfo | `object[]` | An aray of { id, name } objects for each connected player |
+
+**NOTE**: playerInfo is only populated if the server chooses to do so.
 
 `fetchServerInfo` rejects if an error occurs during SRV record resolution.
 
