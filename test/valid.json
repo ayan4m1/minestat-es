@@ -1,6 +1,15 @@
 {
   "version": { "protocol": 757, "name": "YourServer 1.12.2-1.21" },
-  "players": { "online": 363, "max": 2000, "sample": [] },
+  "players": {
+    "online": 363,
+    "max": 2000,
+    "sample": [
+      {
+        "id": "123",
+        "name": "TestPlayer"
+      }
+    ]
+  },
   "description": {
     "extra": [
       {

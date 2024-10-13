@@ -64,7 +64,8 @@ export class ModernQueryProtocol implements QueryProtocol {
         players: result.players.online,
         maxPlayers: result.players.max,
         version: result.version.name,
-        motd: buildMotd(result.description)
+        motd: buildMotd(result.description),
+        playerInfo: result.players.sample
       };
     } catch (error) {
       return {

@@ -1,10 +1,11 @@
 import { readFileSync } from 'fs';
 
 import { padData } from './index.test';
+import { ModernServerResponse } from './types';
 import { buildMotd, ModernQueryProtocol } from './modernProtocol';
 
 const emptyData = [undefined, Buffer.from([])];
-const validData = [readFileSync('./test/valid.json')];
+const validData = readFileSync('./test/valid.json');
 const invalidData = [
   readFileSync('./test/invalid.json'),
   readFileSync('./test/empty.json')
@@ -22,11 +23,15 @@ describe('ModernQueryProtocol', () => {
     expect(packet.byteLength).toBeGreaterThan(0);
   });
 
-  it.each(validData)('can parse a valid response', (data) => {
-    const { online, error } = protocol.parse(padData(data));
+  it('can parse a valid response', () => {
+    const parsed = JSON.parse(
+      validData.toString('utf-8')
+    ) as unknown as ModernServerResponse;
+    const { online, error, playerInfo } = protocol.parse(padData(validData));
 
     expect(online).toBeTruthy();
     expect(error).toBeFalsy();
+    expect(playerInfo).toEqual(parsed.players.sample);
   });
 
   it.each(emptyData)('can handle an empty buffer', (data) => {

@@ -47,6 +47,10 @@ export type ServerInfo = {
   motd?: string;
   players?: number;
   maxPlayers?: number;
+  playerInfo?: {
+    id: string;
+    name: string;
+  }[];
 };
 
 export type ModernServerResponse = {
