@@ -33,7 +33,7 @@
   ],
   "license": "MIT",
   "main": "lib/index.cjs",
-  "module": "lib/index.js",
+  "module": "lib/index.mjs",
   "name": "minestat-es",
   "repository": {
     "type": "git",
@@ -47,7 +47,6 @@
     "test": "jest",
     "version": "auto-changelog -p -b 10 -l 10 && git add CHANGELOG.md"
   },
-  "type": "module",
   "types": "lib/index.d.ts",
   "version": "2.2.1",
   "dependencies": {
