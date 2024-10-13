@@ -7,7 +7,7 @@
 
 - Written in TypeScript
 - Less than 5kB of code
-- No runtime dependencies
+- One runtime dependency
 - Supports ESM and CommonJS
 - Comprehensive unit tests
 
