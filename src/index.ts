@@ -90,3 +90,5 @@ export async function fetchServerInfo(
     }
   });
 }
+
+export { QueryProtocols, ServerInfo };
