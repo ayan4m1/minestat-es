@@ -6,12 +6,12 @@ import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 export default config(
   eslint.configs.recommended,
   ...configs.recommended,
-  eslintPluginPrettier,
   eslintPluginImportX.flatConfigs.recommended,
   eslintPluginImportX.flatConfigs.typescript,
   {
     rules: {
       'no-control-regex': 'off'
     }
-  }
+  },
+  eslintPluginPrettier
 );
