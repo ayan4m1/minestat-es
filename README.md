@@ -82,7 +82,7 @@ If the server is online, the object will also contain the following properties:
 | maxPlayers | `number`   | The maximum number of players the server supports         |
 | playerInfo | `object[]` | An aray of { id, name } objects for each connected player |
 
-**NOTE**: playerInfo is only populated if the server chooses to do so.
+**NOTE**: playerInfo is only populated when using the modern query protocol and the server chooses to send it.
 
 `fetchServerInfo` rejects if an error occurs during SRV record resolution.
 
