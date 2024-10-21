@@ -1,5 +1,8 @@
 {
   "author": "ayan4m1 <andrew@bulletlogic.com>",
+  "dependencies": {
+    "varint": "^6.0.0"
+  },
   "description": "Promise-based Minecraft server status",
   "devDependencies": {
     "@eslint/js": "^9.13.0",
@@ -31,13 +34,20 @@
   "files": [
     "lib/"
   ],
+  "keywords": [
+    "minestat",
+    "minecraft",
+    "server",
+    "status",
+    "checker"
+  ],
   "license": "MIT",
   "main": "lib/index.cjs",
   "module": "lib/index.js",
   "name": "minestat-es",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ayan4m1/minestat-es"
+    "url": "git+https://github.com/ayan4m1/minestat-es.git"
   },
   "scripts": {
     "build": "rollup -c --configPlugin typescript",
@@ -49,8 +59,5 @@
   },
   "type": "module",
   "types": "lib/index.d.ts",
-  "version": "2.2.4",
-  "dependencies": {
-    "varint": "^6.0.0"
-  }
+  "version": "2.2.4"
 }
