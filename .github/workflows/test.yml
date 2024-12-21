@@ -1,7 +1,6 @@
 name: Run tests for PRs
 on:
   pull_request:
-    types: [opened, reopened]
 jobs:
   test:
     runs-on: ubuntu-latest
