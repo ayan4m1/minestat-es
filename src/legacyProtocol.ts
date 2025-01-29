@@ -11,6 +11,10 @@ export class LegacyQueryProtocol implements QueryProtocol {
     return queryBytes;
   }
 
+  pingPacket(): Buffer {
+    return queryBytes;
+  }
+
   parse(response?: Buffer): ServerInfo {
     // empty response can indicate a server that is still starting up
     if (!response?.length) {
