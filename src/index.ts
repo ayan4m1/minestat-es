@@ -56,7 +56,9 @@ export async function fetchServerInfo(
   return new Promise((resolve, reject) => {
     // guard against any exceptions that might occur
     try {
-      let protocol: QueryProtocol = null;
+      let protocol: QueryProtocol = null,
+        startTime: [number, number] = [0, 0],
+        serverInfo: ServerInfo = null;
 
       switch (options.protocol) {
         case QueryProtocols.Legacy:
@@ -69,6 +71,10 @@ export async function fetchServerInfo(
       const resolveOffline = (error?: Error) =>
         resolve({ online: false, error });
       const client = connect(port, address, () => {
+        if (protocol instanceof LegacyQueryProtocol) {
+          startTime = process.hrtime();
+        }
+
         client.write(protocol.handshakePacket(address, port));
       });
 
@@ -80,10 +86,40 @@ export async function fetchServerInfo(
         client.end();
         resolveOffline(error);
       });
-      client.on('data', (raw) => {
-        client.end();
 
-        resolve(protocol.parse(raw));
+      client.on('data', (raw) => {
+        if (protocol instanceof LegacyQueryProtocol) {
+          const pingTime = process.hrtime(startTime);
+          const pingMs = pingTime[0] * 1e3 + pingTime[1] / 1e6;
+
+          resolve({
+            ...protocol.parse(raw),
+            pingMs
+          });
+        } else if (options.ping) {
+          if (!serverInfo) {
+            serverInfo = protocol.parse(raw);
+            startTime = process.hrtime();
+
+            client.write(protocol.pingPacket(), () => {
+              client.on('close', () => {
+                client.end();
+                resolve(serverInfo);
+              });
+            });
+          } else {
+            const pingTime = process.hrtime(startTime);
+            const pingMs = pingTime[0] * 1e3 + pingTime[1] / 1e6;
+
+            resolve({
+              ...serverInfo,
+              pingMs
+            });
+          }
+        } else {
+          client.end();
+          resolve(protocol.parse(raw));
+        }
       });
     } catch (error) {
       reject(error);

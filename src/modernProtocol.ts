@@ -1,10 +1,6 @@
-import varint from 'varint';
-
 import { QueryProtocol } from './protocol';
+import { PacketUtils } from './packetUtils';
 import { Description, ModernServerResponse, ServerInfo } from './types';
-
-// eslint-disable-next-line import-x/no-named-as-default-member
-const { encode, encodingLength } = varint;
 
 const protocolVersion = 757;
 
@@ -29,19 +25,28 @@ export class ModernQueryProtocol implements QueryProtocol {
 
     portBuffer.writeUInt16BE(port);
 
-    const handshake = this.createPacket(
+    const handshake = PacketUtils.createPacket(
       0,
       Buffer.concat([
-        Buffer.from(encode(protocolVersion)),
-        Buffer.from(encode(address.length)),
+        Buffer.from(PacketUtils.encode(protocolVersion)),
+        Buffer.from(PacketUtils.encode(address.length)),
         Buffer.from(address),
         portBuffer,
-        Buffer.from(encode(1))
+        Buffer.from(PacketUtils.encode(1))
       ])
     );
-    const request = this.createPacket(0, Buffer.alloc(0));
+    const request = PacketUtils.createPacket(0, Buffer.alloc(0));
 
     return Buffer.concat([handshake, request]);
+  }
+
+  pingPacket(): Buffer {
+    const pingBuffer = Buffer.alloc(8);
+
+    // value supplied to server does not matter
+    pingBuffer.writeUint32BE(0);
+
+    return PacketUtils.createPacket(1, pingBuffer);
   }
 
   parse(response?: Buffer): ServerInfo {
@@ -52,7 +57,9 @@ export class ModernQueryProtocol implements QueryProtocol {
       };
     }
 
-    const payload = response.subarray(encodingLength(response.length) * 2 + 1);
+    const payload = response.subarray(
+      PacketUtils.encodingLength(response.length) * 2 + 1
+    );
 
     try {
       const result = JSON.parse(
@@ -73,13 +80,5 @@ export class ModernQueryProtocol implements QueryProtocol {
         error
       };
     }
-  }
-
-  createPacket(id: number, payload: Buffer): Buffer {
-    return Buffer.concat([
-      Buffer.from(encode(encodingLength(id) + payload.length)),
-      Buffer.from(encode(id)),
-      payload
-    ]);
   }
 }

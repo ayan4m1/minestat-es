@@ -47,6 +47,7 @@ export type ServerInfo = {
   motd?: string;
   players?: number;
   maxPlayers?: number;
+  pingMs?: number;
   playerInfo?: {
     id: string;
     name: string;
@@ -76,6 +77,7 @@ export enum QueryProtocols {
  */
 export type CommonOpts = {
   timeout?: number;
+  ping?: boolean;
   protocol?: QueryProtocols;
 };
 
