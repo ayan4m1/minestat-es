@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { connect, Socket } from 'net';
 import { promises as dns, SrvRecord } from 'dns';
 
-import { padData } from './test.utils';
+import { padData } from './packetUtils';
 import { queryBytes } from './legacyProtocol';
 import { validData } from './legacyProtocol.test';
 import { QueryProtocols, fetchServerInfo } from './index';
