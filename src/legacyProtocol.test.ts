@@ -36,6 +36,12 @@ describe('LegacyQueryProtocol', () => {
     expect(result.compare(queryBytes)).toBe(0);
   });
 
+  it('can generate a ping packet', () => {
+    const result = protocol.pingPacket();
+
+    expect(result.compare(queryBytes)).toBe(0);
+  });
+
   it.each(validData)('can parse a valid response', (data) => {
     const { online, error } = protocol.parse(data);
 

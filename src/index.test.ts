@@ -1,14 +1,11 @@
-import varint from 'varint';
+import { readFileSync } from 'fs';
 import { connect, Socket } from 'net';
 import { promises as dns, SrvRecord } from 'dns';
 
-import { fetchServerInfo } from './index';
-import { QueryProtocols } from './types';
+import { padData } from './test.utils';
 import { queryBytes } from './legacyProtocol';
-import { readFileSync } from 'fs';
-
-// eslint-disable-next-line import-x/no-named-as-default-member
-const { encodingLength } = varint;
+import { validData } from './legacyProtocol.test';
+import { QueryProtocols, fetchServerInfo } from './index';
 
 // Mock the node modules we depend on
 jest.mock('net', () => ({
@@ -24,14 +21,6 @@ jest.mock('dns', () => ({
   }
 }));
 
-export const padData = (data: Buffer): Buffer => {
-  const skipBytes = encodingLength(data.length) * 2 + 1;
-  const padded = Buffer.alloc(data.byteLength + skipBytes);
-  data.copy(padded, skipBytes);
-
-  return padded;
-};
-
 /**
  * Represents a function which takes a port, hostname, and callback
  * and returns a Socket.
@@ -46,25 +35,31 @@ type ConnectMock = (
  * Creates a mocked Socket using the supplied method implementations.
  *
  * @param on Handler for .on()
- * @param end Handler for .end()
- * @param setTimeout Handler for .setTimeout()
  * @param write Handler for .write()
+ * @param setTimeout Handler for .setTimeout()
  * @returns A mock Socket instance
  */
 const createMockSocket = (
   on: jest.Mock = jest.fn(),
-  end: jest.Mock = jest.fn(),
-  setTimeout: jest.Mock = jest.fn(),
-  write: jest.Mock = jest.fn()
+  write: jest.Mock = jest.fn(),
+  setTimeout: jest.Mock = jest.fn()
 ): Socket => {
   const result = new Socket();
 
   result.on = on;
-  result.end = end;
+  result.end = jest.fn();
   result.setTimeout = setTimeout;
   result.write = write;
 
   return result;
+};
+
+const mockTimer = () => {
+  jest
+    .spyOn(process, 'hrtime')
+    .mockImplementation((previous?: [number, number]) => {
+      return [(previous?.[0] ?? -1) + 1, 0];
+    });
 };
 
 // Create mock functions for the node modules we depend on
@@ -78,6 +73,20 @@ describe('minestat-es', () => {
     jest.resetAllMocks();
   });
 
+  describe('exports', () => {
+    it('exports fetchServerInfo', async () => {
+      const module = await import('./index');
+
+      expect(module.fetchServerInfo).toBeTruthy();
+    });
+
+    it('exports QueryProtocols', async () => {
+      const module = await import('./index');
+
+      expect(module.QueryProtocols).toBeTruthy();
+    });
+  });
+
   describe('fetchServerInfo', () => {
     const hostname = 'example.com';
     const address = '1.2.3.4';
@@ -87,7 +96,7 @@ describe('minestat-es', () => {
     it('writes two bytes with legacy protocol', (done) => {
       const socket = createMockSocket();
 
-      connectMock.mockImplementation(
+      connectMock.mockImplementationOnce(
         (
           mockPort: number,
           mockHost: string,
@@ -116,10 +125,10 @@ describe('minestat-es', () => {
       expect.assertions(5);
       fetchServerInfo({ address, port, protocol: QueryProtocols.Legacy });
     });
-    it('writes to socket with modern protocol', (done) => {
+    it('writes JSON with modern protocol', (done) => {
       const socket = createMockSocket();
 
-      connectMock.mockImplementation(
+      connectMock.mockImplementationOnce(
         (
           mockPort: number,
           mockHost: string,
@@ -150,32 +159,28 @@ describe('minestat-es', () => {
     });
     it('parses modern response if received', async () => {
       const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'data') {
-                return;
-              }
+        jest.fn((eventName: string, callback: CallableFunction) => {
+          if (eventName !== 'data') {
+            return;
+          }
 
-              callback(padData(readFileSync('./test/valid.json')));
-            }
-          )
+          callback(padData(readFileSync('./test/valid.json')));
+        })
       );
 
-      connectMock.mockImplementation(() => socket);
+      connectMock.mockImplementationOnce(() => socket);
 
-      const { online, error } = await fetchServerInfo({
+      const { online, error, pingMs } = await fetchServerInfo({
         address,
         port,
         protocol: QueryProtocols.Modern
       });
 
-      // todo: assert that ModernQueryProtocol.parse has been called
       expect(online).toBeTruthy();
       expect(error).toBeFalsy();
+      expect(pingMs).toBeUndefined();
     });
-    it('handles unhandled error', async () => {
+    it('handles unhandled socket errors', async () => {
       expect.assertions(1);
       try {
         await fetchServerInfo({
@@ -188,8 +193,8 @@ describe('minestat-es', () => {
     });
     it('handles socket timeout', async () => {
       const socket = createMockSocket(
-        undefined,
-        undefined,
+        jest.fn(),
+        jest.fn(),
         jest.fn().mockImplementation((time: number, fn: CallableFunction) => {
           expect(time).toBe(timeout);
           fn();
@@ -197,7 +202,7 @@ describe('minestat-es', () => {
       );
       const timeout = 500;
 
-      connectMock.mockImplementation(() => socket);
+      connectMock.mockImplementationOnce(() => socket);
 
       const result = await fetchServerInfo({
         address,
@@ -209,33 +214,29 @@ describe('minestat-es', () => {
       expect(socket.end).toHaveBeenCalled();
       expect(result).toEqual(offlineResult);
     });
-    it('handles socket error', async () => {
+    it('handles explicit socket error', async () => {
       const expectedError = new Error('Something failed.');
       const socket = createMockSocket(
-        jest
-          .fn()
-          .mockImplementation(
-            (eventName: string, callback: CallableFunction) => {
-              if (eventName !== 'error') {
-                return;
-              }
+        jest.fn((eventName: string, callback: CallableFunction) => {
+          if (eventName !== 'error') {
+            return;
+          }
 
-              callback(expectedError);
-            }
-          )
+          callback(expectedError);
+        })
       );
 
-      connectMock.mockImplementation(() => socket);
+      connectMock.mockImplementationOnce(() => socket);
 
       const { online, error } = await fetchServerInfo({ address, port });
 
       expect(online).toBeFalsy();
       expect(error).toEqual(expectedError);
     });
-    it('handles resolveSrv throwing an error', async () => {
+    it('handles resolveSrv errors', async () => {
       const expectedError = new Error('Something failed.');
 
-      resolveMock.mockImplementation(() => Promise.reject(expectedError));
+      resolveMock.mockImplementationOnce(() => Promise.reject(expectedError));
 
       expect.assertions(1);
       try {
@@ -250,7 +251,7 @@ describe('minestat-es', () => {
       );
       const mockData: SrvRecord[] = [];
 
-      resolveMock.mockImplementation(() => Promise.resolve(mockData));
+      resolveMock.mockImplementationOnce(() => Promise.resolve(mockData));
 
       expect.assertions(1);
       try {
@@ -265,7 +266,7 @@ describe('minestat-es', () => {
       );
       const mockData: SrvRecord[] = [];
 
-      resolveMock.mockImplementation(() => Promise.resolve(mockData));
+      resolveMock.mockImplementationOnce(() => Promise.resolve(mockData));
 
       expect.assertions(1);
       try {
@@ -291,7 +292,7 @@ describe('minestat-es', () => {
         }
       ];
 
-      connectMock.mockImplementation(
+      connectMock.mockImplementationOnce(
         (
           mockPort: number,
           mockHost: string,
@@ -320,6 +321,95 @@ describe('minestat-es', () => {
 
       expect.assertions(5);
       fetchServerInfo({ hostname: `_minecraft._tcp.${hostname}` });
+    });
+    it('obtains ping with legacy protocol', async () => {
+      mockTimer();
+
+      let dataListener: CallableFunction = () => {};
+
+      const socket = createMockSocket(
+        jest.fn((eventName: string, callback: CallableFunction) => {
+          if (eventName !== 'data') {
+            return;
+          }
+
+          dataListener = callback;
+          callback(validData);
+        }),
+        jest.fn(() => {
+          dataListener(Buffer.alloc(0));
+        })
+      );
+
+      connectMock.mockImplementationOnce(() => socket);
+
+      const { pingMs } = await fetchServerInfo({
+        address,
+        port,
+        ping: true
+      });
+
+      expect(pingMs).toBeDefined();
+      expect(pingMs).toBeGreaterThan(0);
+    });
+    it('obtains ping with modern protocol', async () => {
+      mockTimer();
+
+      let dataListener: CallableFunction = () => {};
+
+      const socket = createMockSocket(
+        jest.fn((eventName: string, callback: CallableFunction) => {
+          if (eventName !== 'data') {
+            return;
+          }
+
+          dataListener = callback;
+          callback(padData(readFileSync('./test/valid.json')));
+        }),
+        jest.fn(() => {
+          dataListener(Buffer.alloc(0));
+        })
+      );
+
+      connectMock.mockImplementationOnce(() => socket);
+
+      const { online, error, pingMs } = await fetchServerInfo({
+        address,
+        port,
+        protocol: QueryProtocols.Modern,
+        ping: true
+      });
+
+      expect(online).toBeTruthy();
+      expect(error).toBeFalsy();
+      expect(pingMs).toBeGreaterThan(0);
+    });
+    it('obtains ping if connection is closed early', async () => {
+      mockTimer();
+
+      const socket = createMockSocket(
+        jest.fn((eventName: string, callback: CallableFunction) => {
+          if (eventName === 'close') {
+            callback();
+          } else if (eventName === 'data') {
+            callback(padData(readFileSync('./test/valid.json')));
+          }
+        }),
+        jest.fn((_: Buffer, callback: CallableFunction) => callback())
+      );
+
+      connectMock.mockImplementationOnce(() => socket);
+
+      const { online, error, pingMs } = await fetchServerInfo({
+        address,
+        port,
+        protocol: QueryProtocols.Modern,
+        ping: true
+      });
+
+      expect(online).toBeTruthy();
+      expect(error).toBeFalsy();
+      expect(pingMs).toBeGreaterThan(0);
     });
   });
 });

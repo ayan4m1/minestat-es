@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 
-import { padData } from './index.test';
+import { padData } from './test.utils';
 import { ModernServerResponse } from './types';
 import { buildMotd, ModernQueryProtocol } from './modernProtocol';
 
@@ -19,7 +19,14 @@ describe('ModernQueryProtocol', () => {
   it('can generate a handshake packet', () => {
     const packet = protocol.handshakePacket(address, port);
 
-    expect(packet).toBeTruthy();
+    expect(packet).toBeInstanceOf(Buffer);
+    expect(packet.byteLength).toBeGreaterThan(0);
+  });
+
+  it('can generate a ping packet', () => {
+    const packet = protocol.pingPacket();
+
+    expect(packet).toBeInstanceOf(Buffer);
     expect(packet.byteLength).toBeGreaterThan(0);
   });
 
