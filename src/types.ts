@@ -41,19 +41,46 @@ export type PlayerInfo = {
  * Contains an `online` boolean plus the server reply data.
  */
 export type ServerInfo = {
+  /**
+   * Whether or not a successful connection to the server was established.
+   */
   online: boolean;
+  /**
+   * Any error that occurred during the fetch process.
+   */
   error?: Error;
+  /**
+   * Minecraft server version.
+   */
   version?: string;
+  /**
+   * Minecraft server MOTD.
+   */
   motd?: string;
+  /**
+   * Number of currently connected players.
+   */
   players?: number;
+  /**
+   * Maximum number of players the server supports.
+   */
   maxPlayers?: number;
+  /**
+   * Number of milliseconds between host and client.
+   */
   pingMs?: number;
+  /**
+   * Optional list of player information.
+   */
   playerInfo?: {
     id: string;
     name: string;
   }[];
 };
 
+/**
+ * The modern protocol response's JSON schema
+ */
 export type ModernServerResponse = {
   description: Description;
   favicon?: string;
@@ -65,7 +92,7 @@ export type ModernServerResponse = {
 };
 
 /**
- * List the supported query protocols
+ * List of the supported query protocols
  */
 export enum QueryProtocols {
   Legacy = 'legacy',
@@ -73,7 +100,7 @@ export enum QueryProtocols {
 }
 
 /**
- * Options common to both modes of invocation
+ * Options common to all query protocols
  */
 export type CommonOpts = {
   timeout?: number;

@@ -56,6 +56,7 @@ export async function fetchServerInfo(
     options.timeout = 5000;
   }
 
+  // fill in default protocol type
   if (!options.protocol) {
     options.protocol = QueryProtocols.Legacy;
   }
@@ -67,6 +68,7 @@ export async function fetchServerInfo(
         startTime: [number, number] = [0, 0],
         serverInfo: ServerInfo = null;
 
+      // instantiate appropriate protocol handler
       switch (options.protocol) {
         case QueryProtocols.Legacy:
           protocol = new LegacyQueryProtocol();
@@ -78,13 +80,16 @@ export async function fetchServerInfo(
       const resolveOffline = (error?: Error) =>
         resolve({ online: false, error });
       const client = connect(port, address, () => {
+        // start timing now if we are using legacy protocol
         if (protocol instanceof LegacyQueryProtocol) {
           startTime = hrtime();
         }
 
+        // write the handshake packet
         client.write(protocol.handshakePacket(address, port));
       });
 
+      // set client event handlers
       client.setTimeout(options.timeout, () => {
         client.end();
         resolveOffline();
@@ -93,13 +98,14 @@ export async function fetchServerInfo(
         client.end();
         resolveOffline(error);
       });
-
       client.on('data', (raw) => {
         if (protocol instanceof LegacyQueryProtocol) {
+          // if legacy protocol, we have ping and response already
           const pingMs = getPingMs(startTime);
 
           resolve({ ...protocol.parse(raw), pingMs });
         } else if (options.ping) {
+          // if modern and pinging, we need to send the ping request packet
           if (!serverInfo) {
             serverInfo = protocol.parse(raw);
             startTime = hrtime();
@@ -112,11 +118,13 @@ export async function fetchServerInfo(
               });
             });
           } else {
+            // we have received the ping response packet, return our result
             const pingMs = getPingMs(startTime);
 
             resolve({ ...serverInfo, pingMs });
           }
         } else {
+          // modern protocol but no ping requested, parse response and return
           client.end();
           resolve(protocol.parse(raw));
         }
