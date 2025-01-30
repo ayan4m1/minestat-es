@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 
-import { padData } from './test.utils';
+import { padData } from './packetUtils';
 import { ModernServerResponse } from './types';
 import { buildMotd, ModernQueryProtocol } from './modernProtocol';
 

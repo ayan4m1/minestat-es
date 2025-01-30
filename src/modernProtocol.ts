@@ -1,5 +1,5 @@
 import { QueryProtocol } from './protocol';
-import { PacketUtils } from './packetUtils';
+import { createPacket, encode, encodingLength } from './packetUtils';
 import { Description, ModernServerResponse, ServerInfo } from './types';
 
 const protocolVersion = 757;
@@ -25,17 +25,17 @@ export class ModernQueryProtocol implements QueryProtocol {
 
     portBuffer.writeUInt16BE(port);
 
-    const handshake = PacketUtils.createPacket(
+    const handshake = createPacket(
       0,
       Buffer.concat([
-        Buffer.from(PacketUtils.encode(protocolVersion)),
-        Buffer.from(PacketUtils.encode(address.length)),
+        Buffer.from(encode(protocolVersion)),
+        Buffer.from(encode(address.length)),
         Buffer.from(address),
         portBuffer,
-        Buffer.from(PacketUtils.encode(1))
+        Buffer.from(encode(1))
       ])
     );
-    const request = PacketUtils.createPacket(0, Buffer.alloc(0));
+    const request = createPacket(0, Buffer.alloc(0));
 
     return Buffer.concat([handshake, request]);
   }
@@ -46,7 +46,7 @@ export class ModernQueryProtocol implements QueryProtocol {
     // value supplied to server does not matter
     pingBuffer.writeUint32BE(0);
 
-    return PacketUtils.createPacket(1, pingBuffer);
+    return createPacket(1, pingBuffer);
   }
 
   parse(response?: Buffer): ServerInfo {
@@ -57,9 +57,7 @@ export class ModernQueryProtocol implements QueryProtocol {
       };
     }
 
-    const payload = response.subarray(
-      PacketUtils.encodingLength(response.length) * 2 + 1
-    );
+    const payload = response.subarray(encodingLength(response.length) * 2 + 1);
 
     try {
       const result = JSON.parse(
