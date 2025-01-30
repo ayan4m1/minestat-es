@@ -6,7 +6,7 @@
 ## features
 
 - Written in TypeScript
-- Less than 5kB of code
+- Less than 6kB of code
 - One runtime dependency
 - Supports ESM and CommonJS
 - Comprehensive unit tests
@@ -60,6 +60,19 @@ fetchServerInfo({
 });
 ```
 
+### ping
+
+This library can optionally return the ping time in milliseconds. This is defined as the time between sending the ping packet and receiving a response. Pinging is possible for both legacy and modern query protocols.
+
+```ts
+import { fetchServerInfo } from 'minestat-es';
+
+fetchServerInfo({
+  hostname: 'example.com',
+  ping: true
+});
+```
+
 Regardless of the way it was invoked, `fetchServerInfo` returns a promise which will resolve with an object containing the following properties:
 
 | Key    | Type      | Description                         |
@@ -74,13 +87,14 @@ If the server is offline, the object will also contain the properties:
 
 If the server is online, the object will also contain the following properties:
 
-| Key        | Type       | Description                                               |
-| ---------- | ---------- | --------------------------------------------------------- |
-| version    | `string`   | The server's version string                               |
-| motd       | `string`   | The server's Message of the Day                           |
-| players    | `number`   | The number of players on the server                       |
-| maxPlayers | `number`   | The maximum number of players the server supports         |
-| playerInfo | `object[]` | An aray of { id, name } objects for each connected player |
+| Key        | Type       | Description                                                             |
+| ---------- | ---------- | ----------------------------------------------------------------------- |
+| version    | `string`   | The server's version string                                             |
+| motd       | `string`   | The server's Message of the Day                                         |
+| players    | `number`   | The number of players on the server                                     |
+| maxPlayers | `number`   | The maximum number of players the server supports                       |
+| playerInfo | `object[]` | An aray of { id, name } objects for each connected player               |
+| pingMs     | `number`   | The number of milliseconds between sending and receiving a ping packet. |
 
 **NOTE**: playerInfo is only populated when using the modern query protocol and the server chooses to send it.
 
