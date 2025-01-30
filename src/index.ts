@@ -1,4 +1,5 @@
 import { connect } from 'net';
+import { hrtime } from 'process';
 import { promises as dns } from 'dns';
 
 import { QueryProtocol } from './protocol';
@@ -8,6 +9,12 @@ import { AddressOpts, HostnameOpts, QueryProtocols, ServerInfo } from './types';
 
 const prefixWith = (base: string, prefix: string): string =>
   `${base.startsWith(prefix) ? '' : prefix}${base}`;
+
+const getPingMs = (startTime: [number, number]): number => {
+  const pingTime = hrtime(startTime);
+
+  return pingTime[0] * 1e3 + pingTime[1] / 1e6;
+};
 
 /**
  * Open a TCP socket to query Minecraft server status.
@@ -72,7 +79,7 @@ export async function fetchServerInfo(
         resolve({ online: false, error });
       const client = connect(port, address, () => {
         if (protocol instanceof LegacyQueryProtocol) {
-          startTime = process.hrtime();
+          startTime = hrtime();
         }
 
         client.write(protocol.handshakePacket(address, port));
@@ -89,32 +96,25 @@ export async function fetchServerInfo(
 
       client.on('data', (raw) => {
         if (protocol instanceof LegacyQueryProtocol) {
-          const pingTime = process.hrtime(startTime);
-          const pingMs = pingTime[0] * 1e3 + pingTime[1] / 1e6;
+          const pingMs = getPingMs(startTime);
 
-          resolve({
-            ...protocol.parse(raw),
-            pingMs
-          });
+          resolve({ ...protocol.parse(raw), pingMs });
         } else if (options.ping) {
           if (!serverInfo) {
             serverInfo = protocol.parse(raw);
-            startTime = process.hrtime();
-
+            startTime = hrtime();
             client.write(protocol.pingPacket(), () => {
               client.on('close', () => {
+                const pingMs = getPingMs(startTime);
+
                 client.end();
-                resolve(serverInfo);
+                resolve({ ...serverInfo, pingMs });
               });
             });
           } else {
-            const pingTime = process.hrtime(startTime);
-            const pingMs = pingTime[0] * 1e3 + pingTime[1] / 1e6;
+            const pingMs = getPingMs(startTime);
 
-            resolve({
-              ...serverInfo,
-              pingMs
-            });
+            resolve({ ...serverInfo, pingMs });
           }
         } else {
           client.end();
