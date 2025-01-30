@@ -121,6 +121,7 @@ export async function fetchServerInfo(
             // we have received the ping response packet, return our result
             const pingMs = getPingMs(startTime);
 
+            client.end();
             resolve({ ...serverInfo, pingMs });
           }
         } else {
