@@ -13,7 +13,7 @@
 
 ## requirements
 
-- Node 18+
+- Node 22+
 
 ## usage
 
