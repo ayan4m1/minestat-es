@@ -12,8 +12,8 @@ jobs:
         with:
           node-version: 'lts/*'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - run: npm run test
+      - run: yarn install --immutable
+      - run: yarn run test
       - uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
