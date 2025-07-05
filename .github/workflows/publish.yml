@@ -1,7 +1,7 @@
-name: Deploy releases to NPM
+name: Publish releases to NPM
 on:
   push:
-    tags: ['v*']
+    branches: ['main']
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -13,6 +13,7 @@ jobs:
           node-version: 'lts/*'
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
-      - run: npm publish
+      - run: npx semantic-release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
