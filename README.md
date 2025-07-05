@@ -1,7 +1,13 @@
 # minestat-es
 
+Get the status of any Minecraft server from JavaScript.
+
 [![Package Version](https://badge.fury.io/js/minestat-es.svg?2)](https://www.npmjs.com/package/minestat-es)
 [![Code Coverage](https://codecov.io/gh/ayan4m1/minestat-es/branch/main/graph/badge.svg?token=UKTTU7XNAM)](https://codecov.io/gh/ayan4m1/minestat-es)
+
+![Build Status](https://img.shields.io/github/actions/workflow/status/ayan4m1/minestat-es/publish.yml)
+![Node Support](https://img.shields.io/node/v/minestat-es.svg?2)
+![Last Build](https://img.shields.io/npm/last-update/minestat-es)
 
 ## features
 
@@ -16,6 +22,8 @@
 - Node 22+
 
 ## usage
+
+**NOTE**: This library does not support the browser. Polyfills are available for [net](https://www.npmjs.com/package/net-browserify) and [process.hrtime()](https://github.com/kumavis/browser-process-hrtime), but not for `dns`.
 
 ### by address/port
 
