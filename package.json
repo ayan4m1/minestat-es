@@ -12,16 +12,16 @@
   "devDependencies": {
     "@commitlint/config-conventional": "^20.0.0",
     "@commitlint/cz-commitlint": "^20.1.0",
-    "@eslint/js": "^9.38.0",
+    "@eslint/js": "^9.39.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.4",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@types/eslint__js": "^8.42.3",
     "@types/jest": "^30.0.0",
-    "@types/node": "24.9.1",
+    "@types/node": "24.10.1",
     "@types/varint": "^6.0.3",
     "commitizen": "^4.3.1",
     "commitlint": "^20.1.0",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import-x": "^4.16.1",
@@ -29,15 +29,15 @@
     "husky": "^9.1.7",
     "inquirer": "9",
     "jest": "^30.2.0",
-    "lint-staged": "^16.2.5",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.6.2",
-    "rollup": "^4.52.5",
+    "rollup": "^4.53.3",
     "rollup-plugin-auto-external": "^2.0.0",
-    "semantic-release": "24.2.9",
+    "semantic-release": "25.0.2",
     "ts-jest": "^29.4.5",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.2"
+    "typescript-eslint": "^8.47.0"
   },
   "engines": {
     "node": ">=22"
@@ -70,5 +70,5 @@
   "type": "module",
   "types": "lib/index.d.ts",
   "version": "3.1.0",
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.12.0"
 }
