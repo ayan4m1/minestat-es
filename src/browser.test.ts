@@ -57,7 +57,7 @@ const mockTimer = () => {
 // Create mock functions for the node modules we depend on
 const connectMock = connect as unknown as jest.MockedFunction<ConnectMock>;
 
-describe('minestat-es', () => {
+describe('minestat-es for web', () => {
   afterEach(() => {
     jest.resetAllMocks();
   });
