@@ -21,9 +21,11 @@ Get the status of any Minecraft server from JavaScript.
 
 - Node 22+
 
-## usage
+## browser environment
 
-**NOTE**: This library does not support the browser. Polyfills are available for [net](https://www.npmjs.com/package/net-browserify) and [process.hrtime()](https://github.com/kumavis/browser-process-hrtime), but not for `dns`.
+You can use this library within the browser if you configure your bundler to supply polyfills for [net](https://www.npmjs.com/package/net-browserify) and [process.hrtime()](https://github.com/kumavis/browser-process-hrtime). Then, use `import { fetchServerInfo } from 'minestat-es/browser';` to import the browser-friendly version of the function.
+
+## usage
 
 ### by address/port
 
