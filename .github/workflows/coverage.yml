@@ -6,14 +6,14 @@ jobs:
   cover:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 'lts/*'
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
       - run: yarn run test
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
