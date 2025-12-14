@@ -54,7 +54,6 @@
     "checker"
   ],
   "license": "MIT",
-  "main": "lib/index.cjs",
   "module": "lib/index.js",
   "name": "minestat-es",
   "repository": {

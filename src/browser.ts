@@ -1,12 +1,11 @@
 import { connect } from 'net';
 import { hrtime } from 'process';
-import { promises as dns } from 'dns';
 
 import { QueryProtocol } from './protocol';
 import { LegacyQueryProtocol } from './legacyProtocol';
 import { ModernQueryProtocol } from './modernProtocol';
-import { AddressOpts, HostnameOpts, QueryProtocols, ServerInfo } from './types';
-import { getPingMs, prefixWith } from './utils';
+import { AddressOpts, QueryProtocols, ServerInfo } from './types';
+import { getPingMs } from './utils';
 
 /**
  * Open a TCP socket to query Minecraft server status.
@@ -17,31 +16,16 @@ import { getPingMs, prefixWith } from './utils';
  * @returns Server information.
  */
 export async function fetchServerInfo(
-  options: HostnameOpts | AddressOpts
+  options: AddressOpts
 ): Promise<ServerInfo> {
   let address: string = null,
     port: number = null;
 
   // obtain address/port from DNS if required
-  if ('hostname' in options) {
-    const hostOptions = options as HostnameOpts;
-    const mcHost = prefixWith(hostOptions.hostname, '_minecraft._tcp.');
-    const records = await dns.resolveSrv(mcHost);
+  const addrOptions = options as AddressOpts;
 
-    if (!records.length) {
-      throw new Error(`No DNS records found for hostname ${mcHost}`);
-    }
-
-    const record = records[Math.floor(Math.random() * records.length)];
-
-    address = record.name;
-    port = record.port;
-  } else {
-    const addrOptions = options as AddressOpts;
-
-    address = addrOptions.address;
-    port = addrOptions.port;
-  }
+  address = addrOptions.address;
+  port = addrOptions.port;
 
   // fill in default timeout of 5 seconds
   if (!options.timeout) {
