@@ -68,7 +68,7 @@ const resolveMock = dns.resolveSrv as jest.MockedFunction<
   typeof dns.resolveSrv
 >;
 
-describe('minestat-es', () => {
+describe('minestat-es for node', () => {
   afterEach(() => {
     jest.resetAllMocks();
   });
