@@ -19,7 +19,7 @@ Get the status of any Minecraft server from JavaScript.
 
 ## requirements
 
-- Node 22+
+- Node 20+
 
 ## browser environment
 
