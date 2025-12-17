@@ -14,12 +14,12 @@ Get the status of any Minecraft server from JavaScript.
 - Written in TypeScript
 - Less than 6kB of code
 - One runtime dependency
-- Supports ESM and CommonJS
 - Comprehensive unit tests
+- Supports Node.js and browser environments
 
 ## requirements
 
-- Node 20+
+**NOTE**: In Node, you must use ES Modules - CommonJS is no longer supported as of 4.0.0.
 
 ## browser environment
 
