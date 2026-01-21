@@ -23,7 +23,7 @@ Get the status of any Minecraft server from JavaScript.
 
 ## browser environment
 
-You can use this library within the browser if you configure your bundler to supply polyfills for [net](https://www.npmjs.com/package/net-browserify) and [process.hrtime()](https://github.com/kumavis/browser-process-hrtime). Then, use `import { fetchServerInfo } from 'minestat-es/browser';` to import the browser-friendly version of the function.
+You can use this library within the browser if you configure your bundler to supply polyfills for [net](https://www.npmjs.com/package/net-browserify) and [process.hrtime()](https://github.com/kumavis/browser-process-hrtime). Then, use `import { fetchServerInfo } from 'minestat-es/browser';` to import the browser-friendly version of the function. Please note that you must supply `address` and `port`, the SRV record lookup (passing `hostname` as an option) will not work because the DNS functionality is not available in the browser.
 
 ## usage
 
